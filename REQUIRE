@@ -1,0 +1,7 @@
+julia 0.5
+Formatting
+LightXML
+NullableArrays
+ExcelReaders
+DataFrames
+DataStructures
