@@ -222,7 +222,7 @@ function _write_string(io::IO, value, dlm::Char, decimal_separator::Char, null_s
     end
 end
 
-# Padrão brasileiro
+# Default behavior is to consider ';' as delimiter and ',' as a decimal separator.
 function writecsv(filepath::String, tb::Union{AbstractDataFrame, Table} ;
     dlm::Char=';', null_str::String="", decimal_separator::Char=',', header::Bool=true, float_format::FormatSpec=FormatSpec(".15f") )
     const LB = '\n' # line break
@@ -248,10 +248,11 @@ function writecsv(filepath::String, tb::Union{AbstractDataFrame, Table} ;
             end
             write(io, LB)
         end
+
     finally
         close(io)
     end
-    info("Arquivo CSV gerado: $filepath")
+    
     nothing
 end
 
