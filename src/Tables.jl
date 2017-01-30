@@ -33,23 +33,6 @@ function Schema(header::Vector, types::Vector{DataType})
     return Schema(header, types)
 end
 
-using DataStructures
-
-function Schema(d::OrderedDict{Symbol, DataType})
-    n = length(keys(d))
-    head = Vector{Symbol}(n)
-    types = Vector{DataType}(n)
-    
-    i = 1
-    for k in keys(d)
-        head[i] = k
-        types[i] = d[k]
-        i += 1
-    end
-
-    return Schema(head, types)
-end
-
 # Allow for syntax: Schema( [:a => String, :b => Int] )
 function Schema(v::Vector{Pair{Symbol, DataType}})
     n = length(v)
