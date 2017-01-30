@@ -142,7 +142,7 @@ finally
 end
 
 # Table tests with thousands_separator
-tb_example_csv = Tables.readcsv("example.csv", [String, Int, Float64], thousands_separator=Nullable('.'))
+tb_example_csv = Tables.readcsv("example.csv", [String, Int, Float64, Date], thousands_separator=Nullable('.'), date_format=Dates.DateFormat("dd/mm/Y"))
 
 #=
 str1;10;10.000,23
@@ -156,26 +156,32 @@ str6;1;1000,00
 @test tb_example_csv[1,1] == "str1"
 @test tb_example_csv[1,2] == 10
 @test tb_example_csv[1,3] == 10000.23
+@test tb_example_csv[1,4] == Date(2016,1,2)
 
 @test tb_example_csv[2,1] == "str2"
 @test tb_example_csv[2,2] == -20
 @test tb_example_csv[2,3] == 200.23
+@test tb_example_csv[2,4] == Date(2016,1,3)
 
 @test tb_example_csv[3,1] == "str3"
 @test tb_example_csv[3,2] == 0
 @test tb_example_csv[3,3] == 20200100.0
+@test tb_example_csv[3,4] == Date(2016,1,4)
 
 @test tb_example_csv[4,1] == "str4"
 @test tb_example_csv[4,2] == 1000
 @test tb_example_csv[4,3] == 1000.0
+@test tb_example_csv[4,4] == Date(2016,1,25)
 
 @test tb_example_csv[5,1] == "str5"
 @test tb_example_csv[5,2] == 1000000
 @test tb_example_csv[5,3] == 1000.0
+@test tb_example_csv[5,4] == Date(2016,1,26)
 
 @test tb_example_csv[6,1] == "str6"
 @test tb_example_csv[6,2] == 1
 @test tb_example_csv[6,3] == 1000.0
+@test tb_example_csv[6,4] == Date(2016,1,27)
 
 # eachrow
 sch = Tables.Schema([:a, :b, :c, :d], [Int, String, Bool, Nullable{Int}])
