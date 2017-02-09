@@ -7,6 +7,23 @@ using NullableArrays
 using DataFrames
 using Lifting
 
+s = Tables.Schema(a=String, b=Nullable{String})
+@test s.names == [:a, :b]
+@test s.types == [String, Nullable{String}]
+
+ss = Tables.Schema(a=String, b=[1,2])
+@test ss.names == [:a, :b]
+@test ss.types == [String, Int]
+
+sss = Tables.Schema(a=[1,2], b=NullableArray(["a", "b"]))
+@test sss.names == [:a, :b]
+@test sss.types == [Int, Nullable{String}]
+
+tb = Table(a=[1,2], b=NullableArray([3,Nullable{Int}()]))
+@test tb[:a] == [ 1 , 2 ]
+@test get(tb[:b][1] == Nullable(3))
+@test isnull(tb[:b][2])
+
 y = Tables._create_table_column(Nullable{Int}, 2)
 @test typeof(y) == NullableArrays.NullableArray{Int,1}
 @test length(y) == 2

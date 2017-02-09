@@ -47,6 +47,20 @@ function Schema(v::Vector{Pair{Symbol, DataType}})
     return Schema(head, types)
 end
 
+# Allow syntax: Schema(a=String, b=Int)
+function Schema(; kwargs...)
+    n = length(kwargs)
+    head = Vector{Symbol}(n)
+    types = Vector{DataType}(n)
+    for i in 1:n
+        k, v = kwargs[i]
+        head[i] = k
+        types[i] = isa(v, DataType) ? v : eltype(v)
+    end
+
+    return Schema(head, types)
+end
+
 function Table(schema::Schema)
     cols = ncol(schema)
     data = Vector{Any}(cols)
@@ -54,6 +68,26 @@ function Table(schema::Schema)
         col_type = schema.types[c]
         col_data = _create_table_column(col_type, 0)
         data[c] = col_data
+    end
+    return Table(schema, data)
+end
+
+# DataFrame like creation
+# Table(a=[1,2], b=NullableArray([3,Nullable{Int}()]))
+function Table(; kwargs...)
+    n = length(kwargs)
+    pairs = Vector{Pair{Symbol,DataType}}(n)
+    for i in 1:n
+        s,v = kwargs[i]
+        v_type = isa(v, DataType) ? v : eltype(v)
+        pairs[i] = s => v_type
+    end
+    schema = Schema( pairs )
+
+    data = Vector{Any}(n)
+    for i in 1:n
+        k, v = kwargs[i]
+        data[i] = v
     end
     return Table(schema, data)
 end
