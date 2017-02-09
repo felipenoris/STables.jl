@@ -103,7 +103,7 @@ function Table{T}(schema::Schema, matrix::Array{T, 2})
     return tb
 end
 
-_create_table_column{T}(::Type{Nullable{T}}, rows::Int) = NullableArray{T}(rows)
+_create_table_column{T}(::Type{Nullable{T}}, rows::Int) = NullableVector{T}(rows)
 _create_table_column(::Type{String}, rows::Int) = fill("", rows)
 _create_table_column{T<:Number}(::Type{T}, rows::Int) = zeros(T, rows)
 _create_table_column(::Type{Date}, rows::Int) = fill(Date(0), rows)
