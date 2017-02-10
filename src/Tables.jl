@@ -22,11 +22,13 @@ function Base.copy(s::Schema)
     return Schema(new_header, new_types)
 end
 
+#= TODO : deep-copy this
 function Base.copy(t::Table)
     new_schema = copy(t.schema)
     new_data = copy(t.data)
     return Table(new_schema, new_data)
 end
+=#
 
 function Schema(header::Vector, types::Vector{DataType})
     header = [Symbol(x) for x in header]
@@ -364,6 +366,7 @@ function Base.append!{T}(tb::Table, data::Array{T,2})
     return append!(tb, tb_tmp)
 end
 
+#= Fix copy(table)
 function Base.vcat(tb1::Table, tb2::Table)
     @assert tb1.schema == tb2.schema "Schemas don't match"
     tb1_copy = copy(tb1)
@@ -382,6 +385,7 @@ function Base.vcat{T}(tb::Table, data::Array{T,2})
     tb_copy = copy(tb)
     return append!(tb_copy, data)
 end
+=#
 
 include("io.jl")
 
