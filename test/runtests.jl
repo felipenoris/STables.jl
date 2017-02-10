@@ -33,6 +33,8 @@ z = Tables._create_table_column(String, 2)
 @test typeof(z) == Array{String, 1}
 @test length(z) == 2
 
+zz = Tables._create_table_column(Nullable{Int}, 5)
+
 col_names = [:C_STRING, :C_INT, :C_FLOAT, :C_NSTRING, :C_NINT, :C_NFLOAT]
 col_types = [String, Int, Float64, Nullable{String}, Nullable{Int}, Nullable{Float64}]
 ta_schema = Tables.Schema(col_names, col_types)
