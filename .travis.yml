@@ -3,7 +3,6 @@ os:
     - linux
 julia:
     - 0.5
-    - nightly
 before_script:
     - julia -e 'Pkg.clone("https://github.com/felipenoris/Lifting.jl.git")'
 notifications:
