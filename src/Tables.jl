@@ -344,6 +344,8 @@ function Base.push!{T}(tb::Table, row::Array{T,1})
     return append!(tb, tb_tmp)
 end
 
+Base.append!{T}(tb::Table, row::Array{T,1}) = push!(tb, row)
+
 function Base.append!{T}(tb::Table, data::Array{T,2})
     # Check number of columns
     const cols = ncol(tb)

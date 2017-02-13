@@ -285,3 +285,33 @@ y = [ 1 2 3 ; 4 5.5 6]
 tb = [tb ; y]
 @test tb[5,3] == 6
 =#
+
+# append a row
+tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ Nullable(10.0), Nullable(20.0), Nullable{Float64}()] )
+row = [ 4, "four", Nullable(40.0)]
+append!(tb, row)
+@test tb[:a] == [1, 2, 3, 4]
+@test tb[:b] == ["one", "two", "three", "four"]
+#@test get(tb[:c] == [ Nullable(10.0), Nullable(20.0), Nullable{Float64}(), Nullable(40.0)])
+
+# append a matrix
+tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ Nullable(10.0), Nullable(20.0), Nullable{Float64}()] )
+mat = Array{Any}(2,3)
+mat[1,1] = 4
+mat[2,1] = 5
+mat[1,2] = "four"
+mat[2,2] = "five"
+mat[1,3] = Nullable(40.0)
+mat[2,3] = Nullable{Float64}()
+append!(tb, mat)
+@test tb[:a] == [1, 2, 3, 4, 5]
+@test tb[:b] == ["one", "two", "three", "four", "five"]
+#@test get(tb[:c] == [ Nullable(10.0), Nullable(20.0), Nullable{Float64}(), Nullable(40.0), Nullable{Float64}()])
+
+# append a table
+tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ Nullable(10.0), Nullable(20.0), Nullable{Float64}()] )
+tb2 = Tables.Table(a=[4, 5], b=["four", "five"], c=[ Nullable(40.0), Nullable{Float64}() ])
+append!(tb, tb2)
+@test tb[:a] == [1, 2, 3, 4, 5]
+@test tb[:b] == ["one", "two", "three", "four", "five"]
+#@test get(tb[:c] == [ Nullable(10.0), Nullable(20.0), Nullable{Float64}(), Nullable(40.0), Nullable{Float64}()])
