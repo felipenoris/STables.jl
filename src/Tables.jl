@@ -38,7 +38,7 @@ end
 
 function Base.deepcopy(t::Table)
     new_schema = deepcopy(t.schema)
-    new_data = copy(t.data)
+    new_data = deepcopy(t.data)
     return Table(new_schema, new_data)
 end
 

@@ -322,3 +322,26 @@ sch_copy = copy(sch)
 @test isequal(sch, sch_copy)
 push!(sch, :c => Float64)
 @test !isequal(sch, sch_copy)
+
+# deepcopy has the same effects for schema
+sch = Schema(a=Int, b=String)
+sch_copy = deepcopy(sch)
+@test isequal(sch, sch_copy)
+push!(sch, :c => Float64)
+@test !isequal(sch, sch_copy)
+
+# Copying Tables
+tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ Nullable(10.0), Nullable(20.0), Nullable{Float64}()] )
+tb_copy = copy(tb)
+@test isequal(tb, tb_copy)
+append!(tb, [ 4, "four", Nullable(40.0)])
+@test isequal(tb, tb_copy) # shallow-copy will preserve equality on adding rows
+tb[:d] = [1, 2, 3, 4]
+@test !isequal(tb, tb_copy) # shallow-copy will not preserve equality on adding columns
+
+# Deepcopy for Tables
+tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ Nullable(10.0), Nullable(20.0), Nullable{Float64}()] )
+tb_copy = deepcopy(tb)
+@test isequal(tb, tb_copy)
+append!(tb, [ 4, "four", Nullable(40.0)])
+@test !isequal(tb, tb_copy) # deepcopy will not preserve equality on adding rows
