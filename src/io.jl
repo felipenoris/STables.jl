@@ -1,6 +1,4 @@
 
-using Formatting
-
 type CSVFormat
     dlm::Char
     decimal_separator::Char
