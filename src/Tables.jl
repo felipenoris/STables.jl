@@ -6,6 +6,7 @@ using NullableArrays
 using DataFrames
 using Lifting
 
+include("grisu.jl")
 include("types.jl")
 include("schema.jl")
 include("table.jl")

@@ -118,8 +118,8 @@ try
     lines = readlines(FP_TA_CSV)
     @test length(lines) == 3
     @test chomp(lines[1]) == "C_STRING;C_INT;C_FLOAT;C_NSTRING;C_NINT;C_NFLOAT"
-    @test chomp(lines[2]) == "1,1;5;2,200000000000000;\"1;4\";5;2,300000000000000"
-    @test chomp(lines[3]) == "\"1;1\";5;2,200000000000000;;;2,300000000000000"
+    @test chomp(lines[2]) == "1,1;5;2,2;\"1;4\";5;2,3"
+    @test chomp(lines[3]) == "\"1;1\";5;2,2;;;2,3"
 
     tb = Tables.readcsv(FP_TA_CSV, col_types)
     @test names(tb) == col_names
@@ -136,13 +136,17 @@ try
     @test isnull(tb[2,5])
     @test lift(tb[2,6] == unlift(2.3))
 
-    Tables.writecsv(FP_TA_CSV, ta; decimal_separator='.', header=false)
+    fm = Tables.CSVFormat()
+    fm.decimal_separator = '.'
+    Tables.writecsv(FP_TA_CSV, ta, fm; header=false)
     lines = readlines(FP_TA_CSV)
     @test length(lines) == 2
-    @test chomp(lines[1]) == "1,1;5;2.200000000000000;\"1;4\";5;2.300000000000000"
-    @test chomp(lines[2]) == "\"1;1\";5;2.200000000000000;;;2.300000000000000"
+    @test chomp(lines[1]) == "1,1;5;2.2;\"1;4\";5;2.3"
+    @test chomp(lines[2]) == "\"1;1\";5;2.2;;;2.3"
 
-    tb = Tables.readcsv(FP_TA_CSV, ta_schema; decimal_separator='.', header=false)
+    fm = Tables.CSVFormat()
+    fm.decimal_separator = '.'
+    tb = Tables.readcsv(FP_TA_CSV, ta_schema, fm; header=false)
     @test names(tb) == col_names
     @test tb[1,1] == "1,1"
     @test tb[1,2] == 5
@@ -161,7 +165,10 @@ finally
 end
 
 # Table tests with thousands_separator
-tb_example_csv = Tables.readcsv("example.csv", [String, Int, Float64, Date], thousands_separator=Nullable('.'), date_format=Dates.DateFormat("dd/mm/Y"))
+fm = Tables.CSVFormat()
+fm.thousands_separator=Nullable('.')
+fm.date_format=Dates.DateFormat("dd/mm/Y")
+tb_example_csv = Tables.readcsv("example.csv", [String, Int, Float64, Date], fm)
 
 #=
 str1;10;10.000,23

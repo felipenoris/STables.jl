@@ -1,13 +1,30 @@
 
 using Formatting
 
+type CSVFormat
+    dlm::Char
+    decimal_separator::Char
+    thousands_separator::Nullable{Char}
+    null_str::String
+    date_format::Dates.DateFormat
+
+    function CSVFormat(dlm::Char, decimal_separator::Char, thousands_separator::Nullable{Char}, null_str::String, date_format::Dates.DateFormat)
+        # Checks if input is consistent
+        if !isnull(thousands_separator)
+            ts_char = get(thousands_separator)
+            if ts_char == decimal_separator
+                error("decimal_separator ($decimal_separator) conflicts with thousands_separator ($ts_char).")
+            end
+        end
+        new(dlm,decimal_separator,thousands_separator,null_str,date_format)
+    end
+end
+
+# Create with default values
+CSVFormat() = CSVFormat(';', ',', Nullable{Char}(), "", Dates.ISODateFormat)
+
 # parse String
-# TODO: remove keyargs from internal methods
-function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int;
-        null_str::String="",
-        decimal_separator::Char=',',
-        thousands_separator::Nullable{Char}=Nullable{Char}(),
-        date_format::Dates.DateFormat=Dates.ISODateFormat)
+function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
 
     col_data = _create_table_column(T, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
@@ -18,32 +35,22 @@ function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{T}, 
 end
 
 # parse Number
-# TODO: remove keyargs from internal methods
-function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int;
-        null_str::String="",
-        decimal_separator::Char=',',
-        thousands_separator::Nullable{Char}=Nullable{Char}(),
-        date_format::Dates.DateFormat=Dates.ISODateFormat)
+function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
 
     col_data = _create_table_column(T, rows + ROW_OFFSET)
-
-    if !isnull(thousands_separator)
-        ts_char = get(thousands_separator)
-        ts_char == decimal_separator && error("Thousands and decimals separators ($ts_char) must be different")
-    end
 
     for r in FST_DATAROW_INDEX:rows
         r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
         @inbounds value = raw_column[r]
         
         # Converts 100.000.000,00 to 100000000,00
-        if !isnull(thousands_separator)
-            value = replace(value, ts_char, "")
+        if !isnull(format.thousands_separator)
+            value = replace(value, get(format.thousands_separator), "")
         end
 
         # Converts 1000,00 to 1000.00
-        if decimal_separator != '.'
-            value = replace(value, decimal_separator, '.')
+        if format.decimal_separator != '.'
+            value = replace(value, format.decimal_separator, '.')
         end
 
         @inbounds col_data[r_] = parse(T, value)
@@ -52,36 +59,21 @@ function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{T}, ROW_OFFS
 end
 
 # parse Date
-# TODO: remove keyargs from internal methods
-function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int;
-        null_str::String="",
-        decimal_separator::Char=',',
-        thousands_separator::Nullable{Char}=Nullable{Char}(),
-        date_format::Dates.DateFormat=Dates.ISODateFormat)
+function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
 
     col_data = _create_table_column(T, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
         r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
-        @inbounds col_data[r_] = Date(raw_column[r], date_format)
+        @inbounds col_data[r_] = Date(raw_column[r], format.date_format)
     end
     return col_data
 end
 
 # doesn't know how to parse other types
-# TODO: remove keyargs from internal methods
-_read_column{T}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int;
-        null_str::String="",
-        decimal_separator::Char=',',
-        thousands_separator::Nullable{Char}=Nullable{Char}(),
-        date_format::Dates.DateFormat=Dates.ISODateFormat) = error("Parsing $T not implemented.")
+_read_column{T}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) = error("Parsing $T not implemented.")
 
 # parse Nullable String
-# TODO: remove keyargs from internal methods
-function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int;
-        null_str::String="",
-        decimal_separator::Char=',',
-        thousands_separator::Nullable{Char}=Nullable{Char}(),
-        date_format::Dates.DateFormat=Dates.ISODateFormat)
+function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
 
     col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
@@ -89,7 +81,7 @@ function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{Null
         
         @inbounds value = raw_column[r]
 
-        if value == null_str
+        if value == format.null_str
             continue
         else
             @inbounds col_data[r_] = value
@@ -99,35 +91,25 @@ function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{Null
 end
 
 # parse Nullable Number
-# TODO: remove keyargs from internal methods
-function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int;
-        null_str::String="",
-        decimal_separator::Char=',',
-        thousands_separator::Nullable{Char}=Nullable{Char}(),
-        date_format::Dates.DateFormat=Dates.ISODateFormat)
+function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
 
     col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
-
-    if !isnull(thousands_separator)
-        ts_char = get(thousands_separator)
-        ts_char == decimal_separator && error("Thousands and decimals separators ($ts_char) must be different")
-    end
 
     for r in FST_DATAROW_INDEX:rows
         r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
         @inbounds value = raw_column[r]
         
-        if value == null_str
+        if value == format.null_str
             continue
         else
             # Converts 100.000.000,00 to 100000000,00
-            if !isnull(thousands_separator)
-                value = replace(value, ts_char, "")
+            if !isnull(format.thousands_separator)
+                value = replace(value, get(format.thousands_separator), "")
             end
 
             # Converts 1000,00 to 1000.00
-            if decimal_separator != '.'
-                value = replace(value, decimal_separator, '.')
+            if format.decimal_separator != '.'
+                value = replace(value, format.decimal_separator, '.')
             end
             @inbounds col_data[r_] = parse(T, value)
         end
@@ -136,11 +118,7 @@ function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{Nullable{T}}
 end
 
 # parse Nullable Date
-function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int;
-        null_str::String="",
-        decimal_separator::Char=',',
-        thousands_separator::Nullable{Char}=Nullable{Char}(),
-        date_format::Dates.DateFormat=Dates.ISODateFormat)
+function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
 
     col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
@@ -149,33 +127,21 @@ function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{Null
         if value == null_str
             continue
         else
-            @inbounds col_data[r_] = Date(value, date_format)
+            @inbounds col_data[r_] = Date(value, format.date_format)
         end
     end
     return col_data
 end
 
 # doesn't know how to parse other nullables
-# TODO: remove keyargs from internal methods
-_read_column{T}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int;
-    null_str::String="",
-    decimal_separator::Char=',',
-    thousands_separator::Nullable{Char}=Nullable{Char}(),
-    date_format::Dates.DateFormat=Dates.ISODateFormat) = error("Parsing Nullable{$T} not implemented.")
+_read_column{T}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) = error("Parsing Nullable{$T} not implemented.")
 
-# TODO: remove keyargs from internal methods
-function _read_data!(table::Table, raw::Array{String,2};
-        dlm::Char=';',
-        null_str::String="",
-        decimal_separator::Char=',',
-        thousands_separator::Nullable{Char}=Nullable{Char}(),
-        header::Bool=true,
-        date_format::Dates.DateFormat=Dates.ISODateFormat)
-    
+function _read_data!(table::Table, raw::Array{String,2}, format::CSVFormat; header::Bool=true)
+
     rows, cols = size(raw)
-    
+
     # Check if header is consistent with schema
-    cols != length(table.schema.names) && error("CSV not consistent with given schema. ncols in file: $cols; ncols in schema: $(length(schema.names)).")
+    @assert cols == length(table.schema.names) "CSV not consistent with given schema. ncols in file: $cols; ncols in schema: $(length(schema.names))."
     
     if header
         ROW_OFFSET = -1
@@ -189,7 +155,7 @@ function _read_data!(table::Table, raw::Array{String,2};
     
     for col in 1:cols
         @inbounds col_type = table.schema.types[col]
-        @inbounds col_array[col] = _read_column(raw[:,col], col_type, ROW_OFFSET, FST_DATAROW_INDEX, rows; null_str=null_str, decimal_separator=decimal_separator, thousands_separator=thousands_separator, date_format=date_format)
+        @inbounds col_array[col] = _read_column(raw[:,col], col_type, ROW_OFFSET, FST_DATAROW_INDEX, rows, format)
     end
     
     # Set table data without checks
@@ -202,49 +168,18 @@ end
 
 header :: Bool Tells if the input file has a header in the first line. Default is `true`.
 """
-function readcsv(input, schema::Schema;
-        dlm::Char=';',
-        null_str::String="",
-        decimal_separator::Char=',',
-        thousands_separator::Nullable{Char}=Nullable{Char}(),
-        header::Bool=true,
-        use_mmap::Bool=false,
-        date_format::Dates.DateFormat=Dates.ISODateFormat)
-
-    # Checks if input is consistent
-    if !isnull(thousands_separator)
-        ts_char = get(thousands_separator)
-        if ts_char == decimal_separator
-            error("decimal_separator ($decimal_separator) conflicts with thousands_separator ($ts_char).")
-        end
-    end
-
-    raw = readdlm(input, dlm, String; use_mmap=use_mmap)
-
+function readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
+    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap)
     tb = Table(schema)
-    return _read_data!(tb, raw; dlm=dlm, null_str=null_str, decimal_separator=decimal_separator, thousands_separator=thousands_separator, header=header, date_format=date_format)
+    return _read_data!(tb, raw, format; header=header)
 end
 
-function readcsv(input, types::Vector{DataType};
-        dlm::Char=';',
-        null_str::String="",
-        decimal_separator::Char=',',
-        thousands_separator::Nullable{Char}=Nullable{Char}(),
-        use_mmap::Bool=false,
-        date_format::Dates.DateFormat=Dates.ISODateFormat)
+function readcsv(input, types::Vector{DataType}, format::CSVFormat=CSVFormat(); use_mmap::Bool=false)
 
-    # Checks if input is consistent
-    if !isnull(thousands_separator)
-        ts_char = get(thousands_separator)
-        if ts_char == decimal_separator
-            error("decimal_separator ($decimal_separator) conflicts with thousands_separator ($ts_char).")
-        end
-    end
-
-    raw = readdlm(input, dlm, String; use_mmap=use_mmap)
+    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap)
 
     rows, cols = size(raw)
-    cols != length(types) && error("Number of cols in file is not $(length(types)): found $cols")
+    @assert cols == length(types) "Number of cols in file is not $(length(types)): found $cols"
 
     # first row contains header
     header = Vector{Symbol}(cols)
@@ -254,26 +189,28 @@ function readcsv(input, types::Vector{DataType};
     schema = Schema(header, types)
     table = Table(schema)
 
-    return _read_data!(table, raw; dlm=dlm, null_str=null_str, decimal_separator=decimal_separator, thousands_separator=thousands_separator, header=true, date_format=date_format)
+    return _read_data!(table, raw, format; header=true)
 end
 
 # Converts to string
-function _write_string{T<:AbstractFloat}(io::IO, value::T, dlm::Char, decimal_separator::Char, null_str::String, float_format::FormatSpec, date_format::Dates.DateFormat)
+function _write_string{T<:AbstractFloat}(io::IO, value::T, format::CSVFormat)
     local result::String
-    result = fmt(float_format, value)
+    result = tostring(value)
 
-    if decimal_separator != '.'
+    if format.decimal_separator != '.'
         result = replace(result, '.', ',')
     end
+
+    # TODO : support thousands_separator
 
     write(io, result)
 end
 
 _write_string{T<:Integer}(io::IO, value::T, dlm::Char, decimal_separator::Char, null_str::String, float_format::FormatSpec, date_format::Dates.DateFormat) = write(io, value)
 
-function _write_string{T<:AbstractString}(io::IO, value::T, dlm::Char, decimal_separator::Char, null_str::String, float_format::FormatSpec, date_format::Dates.DateFormat)
+function _write_string{T<:AbstractString}(io::IO, value::T, format::CSVFormat)
     # Apply quotes if there´s a delimiter inside the string (replicate MS Excel behavior)
-    if in(dlm, value)
+    if in(format.dlm, value)
         write(io, '"')
         write(io, value)
         write(io, '"')
@@ -282,23 +219,22 @@ function _write_string{T<:AbstractString}(io::IO, value::T, dlm::Char, decimal_s
     end
 end
 
-_write_string(io::IO, value::Int, dlm::Char, decimal_separator::Char, null_str::String, float_format::FormatSpec, date_format::Dates.DateFormat) = write(io, string(value))
+_write_string(io::IO, value::Int, format::CSVFormat) = write(io, string(value))
+_write_string{T<:Dates.TimeType}(io::IO, value::T, format::CSVFormat) = write(io, Dates.format(value, format.date_format))
 
-_write_string{T<:Dates.TimeType}(io::IO, value::T, dlm::Char, decimal_separator::Char, null_str::String, float_format::FormatSpec, date_format::Dates.DateFormat) = write(io, Dates.format(value, date_format))
-
-function _write_string{T}(io::IO, value::Nullable{T}, dlm::Char, decimal_separator::Char, null_str::String, float_format::FormatSpec, date_format::Dates.DateFormat)
+function _write_string{T}(io::IO, value::Nullable{T}, format::CSVFormat)
     if isnull(value)
-        write(io, null_str)
+        write(io, format.null_str)
     else
-        _write_string(io, lift(value), dlm, decimal_separator, null_str, float_format, date_format)
+        _write_string(io, lift(value), format)
     end
 end
 
 # Fallback
-function _write_string(io::IO, value, dlm::Char, decimal_separator::Char, null_str::String, float_format::FormatSpec, date_format::Dates.DateFormat)
+function _write_string(io::IO, value, format::CSVFormat)
     x = string(value)
     # Apply quotes if there´s a delimiter inside the string (replicate MS Excel behavior)
-    if in(dlm, x)
+    if in(format.dlm, x)
         write(io, '"')
         write(io, x)
         write(io, '"')
@@ -307,14 +243,7 @@ function _write_string(io::IO, value, dlm::Char, decimal_separator::Char, null_s
     end
 end
 
-# Default behavior is to consider ';' as delimiter and ',' as a decimal separator.
-function writecsv(filepath::String, tb::Union{AbstractDataFrame, Table} ;
-        dlm::Char=';',
-        null_str::String="",
-        decimal_separator::Char=',',
-        header::Bool=true,
-        float_format::FormatSpec=FormatSpec(".15f"),
-        date_format::Dates.DateFormat=Dates.ISODateFormat)
+function writecsv(filepath::String, tb::Union{AbstractDataFrame, Table}, format::CSVFormat=CSVFormat(); header::Bool=true)
 
     const LB = '\n' # line break
     io = open(filepath, "w")
@@ -326,7 +255,7 @@ function writecsv(filepath::String, tb::Union{AbstractDataFrame, Table} ;
             h = names(tb)
             for i in eachindex(h)
                 write(io, h[i])
-                i != cols && write(io, dlm)
+                i != cols && write(io, format.dlm)
             end
             write(io, LB)
         end
@@ -334,8 +263,8 @@ function writecsv(filepath::String, tb::Union{AbstractDataFrame, Table} ;
         # data
         for r in 1:rows
             for c in 1:cols
-                _write_string(io, tb[r,c], dlm, decimal_separator, null_str, float_format, date_format)
-                c != cols && write(io, dlm)
+                _write_string(io, tb[r,c], format)
+                c != cols && write(io, format.dlm)
             end
             write(io, LB)
         end
