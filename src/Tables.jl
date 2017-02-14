@@ -380,26 +380,30 @@ function Base.append!{T}(tb::Table, data::Array{T,2})
     return append!(tb, tb_tmp)
 end
 
-#= Fix copy(table)
 function Base.vcat(tb1::Table, tb2::Table)
     @assert tb1.schema == tb2.schema "Schemas don't match"
-    tb1_copy = copy(tb1)
-    tb2_copy = copy(tb2)
+    tb1_copy = deepcopy(tb1)
+    tb2_copy = deepcopy(tb2)
     return append!(tb1_copy, tb2_copy)
 end
 
 function Base.vcat{T}(tb::Table, data::Array{T,1})
-    @assert !isempty(data) "Cannot vcat an empty data container"
-    tb_copy = copy(tb)
-    return push!(tb_copy, data)
+    if isempty(data)
+        return deepcopy(tb)
+    else
+        tb_copy = deepcopy(tb)
+        return push!(tb_copy, data)
+    end
 end
 
 function Base.vcat{T}(tb::Table, data::Array{T,2})
-    @assert !isempty(data) "Cannot vcat an empty data container"
-    tb_copy = copy(tb)
-    return append!(tb_copy, data)
+    if isempty(data)
+        return deepcopy(tb)
+    else
+        tb_copy = deepcopy(tb)
+        return append!(tb_copy, data)
+    end
 end
-=#
 
 include("io.jl")
 

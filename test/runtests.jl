@@ -217,29 +217,6 @@ names!(tb, [:a, :b, :c, :d])
 @test isnull(tb[3, 4])
 @test get(tb[1, 4]) == 1
 
-#= fix copy(tb)
-single_row = [4, "4", true, Nullable(10)]
-tb = [ tb ; single_row ]
-
-two_rows = [ 5 "5" true Nullable(2);
-             6 "6" false Nullable{Int}() ]
-
-tb = [ tb ; two_rows ]
-
-i = 1
-for r in Tables.eachrow(tb)
-    @test r[:a] == i
-    @test r[:b] == string(i)
-    i = i + 1
-end
-
-tb2 = copy(tb)
-@assert isequal(tb2, tb)
-
-tb3 = [ tb ; tb2]
-@test nrow(tb3) == nrow(tb) + nrow(tb2)
-=#
-
 # Table with DataFrame
 df = DataFrame(a = @data([1, NA]), b = [:a, :b])
 df_types = [ Nullable{Int}, Nullable{Symbol} ]
@@ -270,21 +247,6 @@ tb[:d] = tb[:a] .* tb[:c]
 sa = Schema( [:a => String, :b => Int, :c => String] )
 sb = Schema( [:a => String, :b => Int, :c => String] )
 @test sa == sb
-
-#= fix copy(tb)
-schema = Schema( [:col_a => Int, :col_b => Float64])
-tb = Table(schema, 2)
-tb[:col_a] = [1, 2]
-tb[:col_b] = [1., 2.]
-tb[:col_c] = [2, 3]
-x = [ 1, 1.2, 1]
-tb = [ tb ; x]
-@test tb[3,3] == 1
-
-y = [ 1 2 3 ; 4 5.5 6]
-tb = [tb ; y]
-@test tb[5,3] == 6
-=#
 
 # append a row
 tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ Nullable(10.0), Nullable(20.0), Nullable{Float64}()] )
@@ -345,3 +307,34 @@ tb_copy = deepcopy(tb)
 @test isequal(tb, tb_copy)
 append!(tb, [ 4, "four", Nullable(40.0)])
 @test !isequal(tb, tb_copy) # deepcopy will not preserve equality on adding rows
+
+# vcat row
+tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ Nullable(10.0), Nullable(20.0), Nullable{Float64}()] )
+row = [ 4, "four", Nullable(40.0)]
+tb_new = [ tb ; row]
+@test tb_new[:a] == [1, 2, 3, 4]
+@test tb_new[:b] == ["one", "two", "three", "four"]
+@test size(tb) == (3, 3) # shouldn't have side-effects on original table
+
+# vcat matrix
+tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ Nullable(10.0), Nullable(20.0), Nullable{Float64}()] )
+mat = Array{Any}(2,3)
+mat[1,1] = 4
+mat[2,1] = 5
+mat[1,2] = "four"
+mat[2,2] = "five"
+mat[1,3] = Nullable(40.0)
+mat[2,3] = Nullable{Float64}()
+tb_new = [ tb ; mat ]
+@test tb_new[:a] == [1, 2, 3, 4, 5]
+@test tb_new[:b] == ["one", "two", "three", "four", "five"]
+@test size(tb) == (3, 3) # shouldn't have side-effects on original table
+
+# vcat table
+tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ Nullable(10.0), Nullable(20.0), Nullable{Float64}()] )
+tb2 = Tables.Table(a=[4, 5], b=["four", "five"], c=[ Nullable(40.0), Nullable{Float64}() ])
+tb_new = [tb; tb2]
+@test tb_new[:a] == [1, 2, 3, 4, 5]
+@test tb_new[:b] == ["one", "two", "three", "four", "five"]
+@test size(tb) == (3, 3) # shouldn't have side-effects on original table
+@test size(tb2) == (2, 3) # shouldn't have side-effects on original table
