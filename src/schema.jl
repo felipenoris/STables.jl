@@ -60,5 +60,4 @@ function DataFrames.names!(s::Schema, new_names::Vector{Symbol})
     s.names = new_names
 end
 
-
 DataFrames.ncol(s::Schema) = length(s.names)

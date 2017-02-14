@@ -181,7 +181,7 @@ str6;1;1000,00
 
 @test tb_example_csv[1,1] == "str1"
 @test tb_example_csv[1,2] == 10
-@test tb_example_csv[1,3] == 10000.23
+@test tb_example_csv[1,3] == 1000
 @test tb_example_csv[1,4] == Date(2016,1,2)
 
 @test tb_example_csv[2,1] == "str2"
@@ -196,7 +196,7 @@ str6;1;1000,00
 
 @test tb_example_csv[4,1] == "str4"
 @test tb_example_csv[4,2] == 1000
-@test tb_example_csv[4,3] == 1000.0
+@test tb_example_csv[4,3] == 10000.23
 @test tb_example_csv[4,4] == Date(2016,1,25)
 
 @test tb_example_csv[5,1] == "str5"
@@ -345,3 +345,19 @@ tb_new = [tb; tb2]
 @test tb_new[:b] == ["one", "two", "three", "four", "five"]
 @test size(tb) == (3, 3) # shouldn't have side-effects on original table
 @test size(tb2) == (2, 3) # shouldn't have side-effects on original table
+
+# Schema inference
+fm = Tables.CSVFormat()
+fm.thousands_separator=Nullable('.')
+fm.date_format=Dates.DateFormat("dd/mm/Y")
+
+raw = readdlm("example.csv", fm.dlm, String)
+
+s = Tables.infer_type(raw[2,3], fm)
+@test s == Tables.InferenceState(Int, false)
+Tables.infer_type(raw[3,3], fm, s)
+@test s == Tables.InferenceState(Float64,false)
+Tables.infer_type(raw[5,3], fm, s)
+@test s == Tables.InferenceState(Float64,false) # should not go back to Int
+
+@test Tables.infer_schema(raw, fm) == Schema(Symbol[:COL_A,:COL_B,:COL_C,:COL_D],DataType[String,Int64,Float64,Date])

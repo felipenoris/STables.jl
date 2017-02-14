@@ -12,6 +12,7 @@ include("schema.jl")
 include("table.jl")
 include("tablerow.jl")
 include("io.jl")
+include("schema_inference.jl")
 
 export Table, Schema, TableRow
 

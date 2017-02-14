@@ -23,6 +23,8 @@ end
 # Create with default values
 CSVFormat() = CSVFormat(';', ',', Nullable{Char}(), "", Dates.ISODateFormat)
 
+isnullstr(str, fm::CSVFormat) = str == fm.null_str
+
 # parse String
 function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
 
@@ -81,7 +83,7 @@ function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{Null
         
         @inbounds value = raw_column[r]
 
-        if value == format.null_str
+        if isnullstr(value, format)
             continue
         else
             @inbounds col_data[r_] = value
@@ -99,7 +101,7 @@ function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{Nullable{T}}
         r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
         @inbounds value = raw_column[r]
         
-        if value == format.null_str
+        if isnullstr(value, format)
             continue
         else
             # Converts 100.000.000,00 to 100000000,00
@@ -124,7 +126,7 @@ function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{Null
     for r in FST_DATAROW_INDEX:rows
         @inbounds value = raw_column[r]
 
-        if value == null_str
+        if isnullstr(value, format)
             continue
         else
             @inbounds col_data[r_] = Date(value, format.date_format)
@@ -206,7 +208,7 @@ function _write_string{T<:AbstractFloat}(io::IO, value::T, format::CSVFormat)
     write(io, result)
 end
 
-_write_string{T<:Integer}(io::IO, value::T, dlm::Char, decimal_separator::Char, null_str::String, float_format::FormatSpec, date_format::Dates.DateFormat) = write(io, value)
+_write_string{T<:Integer}(io::IO, value::T, format::CSVFormat) = write(io, value)
 
 function _write_string{T<:AbstractString}(io::IO, value::T, format::CSVFormat)
     # Apply quotes if there´s a delimiter inside the string (replicate MS Excel behavior)
