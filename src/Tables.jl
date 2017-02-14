@@ -16,19 +16,31 @@ function Base.isequal(t1::Table, t2::Table)
     return (t1.schema == t2.schema) && isequal(t1.data, t2.data)
 end
 
+# shallow-copy
 function Base.copy(s::Schema)
     new_header = copy(s.names)
     new_types = copy(s.types)
     return Schema(new_header, new_types)
 end
 
-#= TODO : deep-copy this
+function Base.deepcopy(s::Schema)
+    new_header = deepcopy(s.names)
+    new_types = deepcopy(s.types)
+    return Schema(new_header, new_types)
+end
+
+# shallow-copy
 function Base.copy(t::Table)
     new_schema = copy(t.schema)
     new_data = copy(t.data)
     return Table(new_schema, new_data)
 end
-=#
+
+function Base.deepcopy(t::Table)
+    new_schema = deepcopy(t.schema)
+    new_data = copy(t.data)
+    return Table(new_schema, new_data)
+end
 
 function Schema(header::Vector, types::Vector{DataType})
     header = [Symbol(x) for x in header]

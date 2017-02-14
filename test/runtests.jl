@@ -315,3 +315,10 @@ append!(tb, tb2)
 @test tb[:a] == [1, 2, 3, 4, 5]
 @test tb[:b] == ["one", "two", "three", "four", "five"]
 #@test get(tb[:c] == [ Nullable(10.0), Nullable(20.0), Nullable{Float64}(), Nullable(40.0), Nullable{Float64}()])
+
+# Copying
+sch = Schema(a=Int, b=String)
+sch_copy = copy(sch)
+@test isequal(sch, sch_copy)
+push!(sch, :c => Float64)
+@test !isequal(sch, sch_copy)
