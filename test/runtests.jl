@@ -7,6 +7,11 @@ using NullableArrays
 using DataFrames
 using Lifting
 
+# Grisu
+@test Tables.tostring(0.58) == "0.58"
+@test Tables.tostring(15.2) == "15.2"
+@test isapprox(parse(Tables.tostring(15.2)), 15.2)
+
 s = Tables.Schema(a=String, b=Nullable{String})
 @test s.names == [:a, :b]
 @test s.types == [String, Nullable{String}]
