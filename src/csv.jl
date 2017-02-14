@@ -140,12 +140,20 @@ function _read_data!(table::Table, raw::Array{String,2}, format::CSVFormat; head
 end
 
 """
-    readcsv(input, schema::Schema; dlm, null_str, decimal_separator, thousands_separator, header, use_mmap)
+    readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
 
 header :: Bool Tells if the input file has a header in the first line. Default is `true`.
 """
 function readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
     raw = readdlm(input, format.dlm, String; use_mmap=use_mmap)
+    tb = Table(schema)
+    return _read_data!(tb, raw, format; header=header)
+end
+
+# Uses schema inference
+function readcsv(input, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
+    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap)
+    schema = infer_schema(raw, format, header)
     tb = Table(schema)
     return _read_data!(tb, raw, format; header=header)
 end
@@ -178,7 +186,6 @@ function _write_string{T<:AbstractFloat}(io::IO, value::T, format::CSVFormat)
     end
 
     # TODO : support thousands_separator
-
     write(io, result)
 end
 

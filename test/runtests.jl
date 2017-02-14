@@ -365,4 +365,13 @@ Tables.infer_type(raw[3,3], fm, s)
 Tables.infer_type(raw[5,3], fm, s)
 @test s == Tables.InferenceState(Float64,false) # should not go back to Int
 
-@test Tables.infer_schema(raw, fm) == Schema(Symbol[:COL_A,:COL_B,:COL_C,:COL_D],DataType[String,Int64,Float64,Date])
+sch = Tables.infer_schema(raw, fm)
+@test sch == Schema(Symbol[:COL_A,:COL_B,:COL_C,:COL_D], DataType[String,Int64,Float64,Date])
+
+tb = Tables.readcsv("example.csv", sch, fm)
+
+fm2 = Tables.CSVFormat()
+fm2.decimal_separator = '.'
+fm2.date_format=Dates.DateFormat("dd/mm/Y")
+tb_copy = Tables.readcsv("example_no_ts.csv", fm2)
+@test isequal(tb, tb_copy)

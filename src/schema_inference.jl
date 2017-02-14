@@ -93,7 +93,7 @@ type_order(::Type{Float64}) = 2
 type_order(::Type{Date}) = 3
 type_order(::Type{String}) = 4
 
-function infer_schema(raw::Array{String, 2}, format::CSVFormat, header=true)
+function infer_schema(raw::Array{String, 2}, format::CSVFormat, header::Bool=true) :: Schema
 	const FST_DATAROW = header ? 2 : 1
 	const nfr = non_float_regex(format)
 	const nir = non_integer_regex(format)
