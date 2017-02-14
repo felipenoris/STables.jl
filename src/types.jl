@@ -31,3 +31,26 @@ end
 immutable TableRowIterator
     table::Table
 end
+
+type CSVFormat
+    dlm::Char
+    decimal_separator::Char
+    thousands_separator::Nullable{Char}
+    null_str::String
+    date_format::Dates.DateFormat
+
+    function CSVFormat(dlm::Char, decimal_separator::Char, thousands_separator::Nullable{Char}, null_str::String, date_format::Dates.DateFormat)
+        # Checks if input is consistent
+        if !isnull(thousands_separator)
+            ts_char = get(thousands_separator)
+            if ts_char == decimal_separator
+                error("decimal_separator ($decimal_separator) conflicts with thousands_separator ($ts_char).")
+            end
+        end
+        new(dlm,decimal_separator,thousands_separator,null_str,date_format)
+    end
+end
+
+# Create with default values
+CSVFormat() = CSVFormat(';', ',', Nullable{Char}(), "", Dates.ISODateFormat)
+isnullstr(str, fm::CSVFormat) = str == fm.null_str

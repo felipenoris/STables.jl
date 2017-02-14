@@ -11,8 +11,8 @@ include("types.jl")
 include("schema.jl")
 include("table.jl")
 include("tablerow.jl")
-include("io.jl")
 include("schema_inference.jl")
+include("io.jl")
 
 export Table, Schema, TableRow
 

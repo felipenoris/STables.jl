@@ -1,5 +1,5 @@
 
-function non_float_regex(fm::Tables.CSVFormat)
+function non_float_regex(fm::CSVFormat)
     if isnull(fm.thousands_separator)
         if fm.decimal_separator == '.'
             return r"[^\d\.-]"
@@ -18,7 +18,7 @@ function non_float_regex(fm::Tables.CSVFormat)
     end
 end
 
-function non_integer_regex(fm::Tables.CSVFormat)
+function non_integer_regex(fm::CSVFormat)
     if isnull(fm.thousands_separator)
         return r"[^\d-]"
     else
