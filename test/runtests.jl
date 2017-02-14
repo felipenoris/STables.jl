@@ -206,7 +206,7 @@ str6;1;1000,00
 
 @test tb_example_csv[6,1] == "str6"
 @test tb_example_csv[6,2] == 1
-@test tb_example_csv[6,3] == 1000.0
+@test tb_example_csv[6,3] == -1000.0
 @test tb_example_csv[6,4] == Date(2016,1,27)
 
 # eachrow
