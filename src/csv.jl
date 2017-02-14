@@ -48,6 +48,21 @@ end
 # doesn't know how to parse other types
 _read_column{T}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) = error("Parsing $T not implemented.")
 
+function extract_nonempty_string(value::AbstractString)
+    const regex_with_quotes = r"^\s*\"\s*(?<str>.*)\s*\"\s*$"
+    const regex_without_quotes = r"^\s*(?<str>.*)\s*$"
+    
+    if ismatch(regex_with_quotes, value)
+        m = match(regex_with_quotes, value)
+    elseif ismatch(regex_without_quotes, value)
+        m = match(regex_without_quotes, value)
+    else
+        error("Should not happen...")
+    end
+
+    return strip(m[:str])
+end
+
 # parse Nullable String
 function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
 
@@ -60,7 +75,7 @@ function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{Null
         if isnullstr(value, format)
             continue
         else
-            @inbounds col_data[r_] = value
+            @inbounds col_data[r_] = extract_nonempty_string(value)
         end
     end
     return col_data

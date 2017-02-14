@@ -352,6 +352,103 @@ tb_new = [tb; tb2]
 @test size(tb2) == (2, 3) # shouldn't have side-effects on original table
 
 # Schema inference
+
+# valid integers without thousands separator
+fm = Tables.CSVFormat(';', '.', Nullable{Char}(), "", Dates.ISODateFormat)
+ir = Tables.integer_regex(fm)
+@test ismatch(ir, "0")
+@test ismatch(ir, "1203")
+@test ismatch(ir, "-1")
+@test !ismatch(ir, "am")
+@test !ismatch(ir, "-1,23")
+@test !ismatch(ir, "-1.23")
+@test !ismatch(ir, "123.123")
+@test !ismatch(ir, "23.10.2015")
+@test !ismatch(ir, "23.10.15")
+@test !ismatch(ir, "1,2,3")
+
+# valid integers with thousands separator
+fm = Tables.CSVFormat(';', ',', Nullable('.'), "", Dates.ISODateFormat)
+ir = Tables.integer_regex(fm)
+@test ismatch(ir, "0")
+@test ismatch(ir, "-1")
+@test !ismatch(ir, "am")
+@test !ismatch(ir, "-1,23")
+@test !ismatch(ir, "-1.23")
+@test ismatch(ir, "123.123")
+@test !ismatch(ir, "23.10.2015")
+@test !ismatch(ir, "23.10.15")
+@test !ismatch(ir, "1,2,3")
+@test !ismatch(ir, "1.2.3")
+@test ismatch(ir, "10")
+@test ismatch(ir, "100")
+@test !ismatch(ir, "1203")
+@test ismatch(ir, "1.203")
+@test ismatch(ir, "10.222")
+@test ismatch(ir, "100.222")
+@test ismatch(ir, "1.000.222")
+@test ismatch(ir, "10.000.222")
+@test ismatch(ir, "100.000.222")
+@test ismatch(ir, "1.000.000.222")
+@test ismatch(ir, "01.000.000.222")
+
+# valid floats without thousands separator
+fm = Tables.CSVFormat(';', '.', Nullable{Char}(), "", Dates.ISODateFormat)
+ir = Tables.float_regex(fm)
+@test ismatch(ir, "0")
+@test ismatch(ir, "1203")
+@test ismatch(ir, "-1")
+@test !ismatch(ir, "am")
+@test !ismatch(ir, "-1,23")
+@test ismatch(ir, "-1.23")
+@test ismatch(ir, "123.123")
+@test !ismatch(ir, "23.10.2015")
+@test !ismatch(ir, "23.10.15")
+@test !ismatch(ir, "1,2,3")
+@test !ismatch(ir, "1.2.3")
+@test ismatch(ir, "123123123.123123123123")
+@test ismatch(ir, "123123123.")
+@test ismatch(ir, ".0000")
+@test !ismatch(ir, ".")
+@test ismatch(ir, ".0")
+@test ismatch(ir, "-.0")
+
+# valid floats with thousands separator
+fm = Tables.CSVFormat(';', ',', Nullable('.'), "", Dates.ISODateFormat)
+ir = Tables.float_regex(fm)
+@test ismatch(ir, "0")
+@test ismatch(ir, "-1")
+@test !ismatch(ir, "am")
+@test ismatch(ir, "-1,23")
+@test !ismatch(ir, "-1.23")
+@test ismatch(ir, "123.123")
+@test !ismatch(ir, "23.10.2015")
+@test !ismatch(ir, "23.10.15")
+@test !ismatch(ir, "1,2,3")
+@test !ismatch(ir, "1.2.3")
+@test ismatch(ir, "10")
+@test ismatch(ir, "100")
+@test !ismatch(ir, "1203")
+@test ismatch(ir, "1.203")
+@test ismatch(ir, "10.222")
+@test ismatch(ir, "100.222")
+@test ismatch(ir, "1.000.222")
+@test ismatch(ir, "10.000.222")
+@test ismatch(ir, "100.000.222")
+@test ismatch(ir, "1.000.000.222")
+@test ismatch(ir, "01.000.000.222")
+@test ismatch(ir, "10,1")
+@test ismatch(ir, "100,1")
+@test !ismatch(ir, "1203,1123123123")
+@test ismatch(ir, "1.203,1")
+@test ismatch(ir, "10.222,1")
+@test ismatch(ir, "100.222,1")
+@test ismatch(ir, "1.000.222,1")
+@test ismatch(ir, "10.000.222,1")
+@test ismatch(ir, "-100.000.222,1")
+@test ismatch(ir, "1.000.000.222,1")
+@test ismatch(ir, "01.000.000.222,1")
+
 fm = Tables.CSVFormat()
 fm.thousands_separator=Nullable('.')
 fm.date_format=Dates.DateFormat("dd/mm/Y")
@@ -375,3 +472,26 @@ fm2.decimal_separator = '.'
 fm2.date_format=Dates.DateFormat("dd/mm/Y")
 tb_copy = Tables.readcsv("example_no_ts.csv", fm2)
 @test isequal(tb, tb_copy)
+
+@test Tables.extract_nonempty_string("hey") == "hey"
+@test Tables.extract_nonempty_string(" hey ") == "hey"
+@test Tables.extract_nonempty_string("   hey     ") == "hey"
+@test Tables.extract_nonempty_string("hey      ") == "hey"
+@test Tables.extract_nonempty_string("    hey") == "hey"
+@test Tables.extract_nonempty_string("hey you") == "hey you"
+@test Tables.extract_nonempty_string("hey 2 you") == "hey 2 you"
+@test Tables.extract_nonempty_string("hey 2\" you") == "hey 2\" you"
+@test Tables.extract_nonempty_string("hey 2\" y\"ou") == "hey 2\" y\"ou"
+@test Tables.extract_nonempty_string("\"hey 2\" y\"ou\"") == "hey 2\" y\"ou"
+
+fm = Tables.CSVFormat(',', '.', Nullable{Char}(), "", Dates.ISODateFormat)
+tb = Tables.readcsv("example_nullable.csv", fm; header=false)
+@test get(tb[1,1] == Nullable(1))
+@test isnull(tb[2,1])
+@test get(tb[3,1] == Nullable(3))
+@test get(tb[1,2] == Nullable("Ab Cd"))
+@test isnull(tb[2,2])
+@test isnull(tb[3,2])
+@test get(tb[1,3] == Nullable(100.5))
+@test isnull(tb[2,3])
+@test get(tb[3,3] == Nullable(2.0))

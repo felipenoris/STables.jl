@@ -1,36 +1,38 @@
 
-function non_float_regex(fm::CSVFormat)
-    if isnull(fm.thousands_separator)
-        if fm.decimal_separator == '.'
-            return r"[^\d\.-]"
-        elseif fm.decimal_separator == ','
-            return r"[^\d,-]"
-        else
-            error("Decimal separator not supported: $(fm.decimal_separator)")
-        end
-    else
-        ts = get(fm.thousands_separator)
-        if (ts == '.' && fm.decimal_separator == ',') || (ts == ',' && fm.decimal_separator == '.')
-            return r"[^\d\.,-]"
+function integer_regex(fm::CSVFormat)
+	if isnull(fm.thousands_separator)
+		return r"^\s*-?\d+\s*$"
+	else
+		ts = get(fm.thousands_separator)
+		if ts == '.'
+			return r"^\s*-?((\d{1,3}\.)?(\d{3}\.)*\d{3}|\d{1,3})\s*$"
+		elseif ts == ','
+			return r"^\s*-?((\d{1,3},)?(\d{3},)*\d{3}|\d{1,3})\s*$"
+		else
+			error("thousands_separator ($ts) not supported.")
+		end
+	end
+end
+
+function float_regex(fm::CSVFormat)
+	if isnull(fm.thousands_separator)
+		if fm.decimal_separator == '.'
+			return r"^\s*-?(\d+(\.\d*)?|\d*\.\d+)\s*$"
+		elseif fm.decimal_separator == ','
+			return r"^\s*-?(\d+(,\d*)?|\d*,\d+)\s*$"
+		else
+			error("Decimal separator not supported: $(fm.decimal_separator)")
+		end
+	else
+		ts = get(fm.thousands_separator)
+		if ts == '.' && fm.decimal_separator == ','
+            return r"^\s*-?((\d{1,3}\.)?(\d{3}\.)*\d{3}|\d{1,3})(,\d*)?\s*$"
+        elseif ts == ',' && fm.decimal_separator == '.'
+        	return r"^\s*-?((\d{1,3},)?(\d{3},)*\d{3}|\d{1,3})(\.\d*)?\s*$"
         else
             error("Combination of thousands_separator ($ts) and decimal_separator $(fm.decimal_separator) not supported.")
         end
-    end
-end
-
-function non_integer_regex(fm::CSVFormat)
-    if isnull(fm.thousands_separator)
-        return r"[^\d-]"
-    else
-        ts = get(fm.thousands_separator)
-        if ts == '.'
-            return r"[^\d-\.]"
-        elseif ts == ','
-            return r"[^\d-,]"
-        else
-            error("thousands_separator ($ts) not supported.")
-        end
-    end
+	end
 end
 
 type InferenceState
@@ -50,7 +52,7 @@ end
 
 Base.:(==)(s1::InferenceState, s2::InferenceState) = s1.datatype == s2.datatype && s1.isnullable == s2.isnullable
 
-function infer_type(value::String, format::CSVFormat, state::InferenceState=InferenceState(), nfr::Regex=non_float_regex(format), nir::Regex=non_integer_regex(format)) :: InferenceState
+function infer_type(value::String, format::CSVFormat, state::InferenceState=InferenceState(), fr::Regex=float_regex(format), ir::Regex=integer_regex(format)) :: InferenceState
 	inferred_type = Any
 	inferred_nullable = false
 
@@ -61,17 +63,18 @@ function infer_type(value::String, format::CSVFormat, state::InferenceState=Infe
 		if state.datatype == String
 			inferred_type = String
 		else
-			if ismatch(nfr, value)
+
+			if ismatch(ir, value)
+				inferred_type = Int
+			elseif ismatch(fr, value)
+				inferred_type = Float64
+			else
 				try 
 					Date(value, format.date_format)
 					inferred_type = Date
 				catch e
 					inferred_type = String
 				end
-			elseif ismatch(nir, value)
-				inferred_type = Float64
-			else
-				inferred_type = Int
 			end
 		end
 	end
@@ -95,8 +98,8 @@ type_order(::Type{String}) = 4
 
 function infer_schema(raw::Array{String, 2}, format::CSVFormat, header::Bool=true) :: Schema
 	const FST_DATAROW = header ? 2 : 1
-	const nfr = non_float_regex(format)
-	const nir = non_integer_regex(format)
+	const fr = float_regex(format)
+	const ir = integer_regex(format)
 	local s::InferenceState
 	(rows, cols) = size(raw)
 	@assert rows >= FST_DATAROW "Empty data"
@@ -117,7 +120,7 @@ function infer_schema(raw::Array{String, 2}, format::CSVFormat, header::Bool=tru
 	for c in 1:cols
 		s = InferenceState()
 		for r in FST_DATAROW:rows
-			infer_type(raw[r,c], format, s, nfr, nir)
+			infer_type(raw[r,c], format, s, fr, ir)
 		end
 		schema_datatypes[c] = datatype(s)
 	end
