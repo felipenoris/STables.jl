@@ -571,3 +571,7 @@ tb = Tables.readcsv("example_nullable.csv", fm; header=false)
 @test get(tb[1,3] == Nullable(100.5))
 @test isnull(tb[2,3])
 @test get(tb[3,3] == Nullable(2.0))
+
+p = [:a => String, :b => Int]
+s = Tables.Schema(p)
+@test p == Tables.pairs(s)

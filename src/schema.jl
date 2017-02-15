@@ -35,6 +35,18 @@ function Schema(v::Vector{Pair{Symbol, DataType}})
     return Schema(head, types)
 end
 
+# Returns [ :a => String, :b => Int ]
+function pairs(s::Schema)
+    n = length(ncol(s))
+    result = Vector{Pair{Symbol, DataType}}(n)
+
+    for i in 1:n
+        result[i][1] = s.names[i]
+        result[i][2] = s.types[i]
+    end
+    return result
+end
+
 # Allow syntax: Schema(a=String, b=Int)
 function Schema(; kwargs...)
     n = length(kwargs)
