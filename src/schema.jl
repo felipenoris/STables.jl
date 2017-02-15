@@ -37,7 +37,7 @@ end
 
 # Returns [ :a => String, :b => Int ]
 function pairs(s::Schema)
-    n = length(ncol(s))
+    n = ncol(s)
     result = Vector{Pair{Symbol, DataType}}(n)
 
     for i in 1:n
