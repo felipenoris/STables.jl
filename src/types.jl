@@ -52,5 +52,5 @@ type CSVFormat
 end
 
 # Create with default values
-CSVFormat() = CSVFormat(';', ',', Nullable{Char}(), "", Dates.ISODateFormat)
+CSVFormat(; dlm::Char=';', decimal_separator::Char=',', thousands_separator::Nullable{Char}=Nullable{Char}(), null_str::String="", date_format::Dates.DateFormat=Dates.ISODateFormat) = CSVFormat(dlm, decimal_separator, thousands_separator, null_str, date_format)
 isnullstr(str, fm::CSVFormat) = str == fm.null_str

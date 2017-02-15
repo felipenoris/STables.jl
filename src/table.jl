@@ -30,7 +30,7 @@ end
 # DataFrame like creation
 # Table(a=[1,2], b=NullableArray([3,Nullable{Int}()]))
 function Table(; kwargs...)
-    n = length(kwargs)
+    const n = length(kwargs)
     pairs = Vector{Pair{Symbol,DataType}}(n)
     for i in 1:n
         s,v = kwargs[i]

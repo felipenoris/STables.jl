@@ -141,16 +141,14 @@ try
     @test isnull(tb[2,5])
     @test lift(tb[2,6] == unlift(2.3))
 
-    fm = Tables.CSVFormat()
-    fm.decimal_separator = '.'
+    fm = Tables.CSVFormat(decimal_separator='.')
     Tables.writecsv(FP_TA_CSV, ta, fm; header=false)
     lines = readlines(FP_TA_CSV)
     @test length(lines) == 2
     @test chomp(lines[1]) == "1,1;5;2.2;\"1;4\";5;2.3"
     @test chomp(lines[2]) == "\"1;1\";5;2.2;;;2.3"
 
-    fm = Tables.CSVFormat()
-    fm.decimal_separator = '.'
+    fm = Tables.CSVFormat(decimal_separator='.')
     tb = Tables.readcsv(FP_TA_CSV, ta_schema, fm; header=false)
     @test names(tb) == col_names
     @test tb[1,1] == "1,1"
@@ -170,9 +168,7 @@ finally
 end
 
 # Table tests with thousands_separator
-fm = Tables.CSVFormat()
-fm.thousands_separator=Nullable('.')
-fm.date_format=Dates.DateFormat("dd/mm/Y")
+fm = Tables.CSVFormat(thousands_separator=Nullable('.'), date_format=Dates.DateFormat("dd/mm/Y"))
 tb_example_csv = Tables.readcsv("example.csv", [String, Int, Float64, Date], fm)
 
 #=
@@ -354,7 +350,7 @@ tb_new = [tb; tb2]
 # Schema inference
 
 # valid integers without thousands separator
-fm = Tables.CSVFormat(';', '.', Nullable{Char}(), "", Dates.ISODateFormat)
+fm = Tables.CSVFormat(decimal_separator='.')
 ir = Tables.integer_regex(fm)
 @test ismatch(ir, "0")
 @test ismatch(ir, "1203")
@@ -368,7 +364,7 @@ ir = Tables.integer_regex(fm)
 @test !ismatch(ir, "1,2,3")
 
 # valid integers with thousands separator
-fm = Tables.CSVFormat(';', ',', Nullable('.'), "", Dates.ISODateFormat)
+fm = Tables.CSVFormat(decimal_separator=',', thousands_separator=Nullable('.'))
 ir = Tables.integer_regex(fm)
 @test ismatch(ir, "0")
 @test ismatch(ir, "-1")
@@ -393,7 +389,7 @@ ir = Tables.integer_regex(fm)
 @test ismatch(ir, "01.000.000.222")
 
 # valid floats without thousands separator
-fm = Tables.CSVFormat(';', '.', Nullable{Char}(), "", Dates.ISODateFormat)
+fm = Tables.CSVFormat(decimal_separator='.')
 ir = Tables.float_regex(fm)
 @test ismatch(ir, "0")
 @test ismatch(ir, "1203")
@@ -414,7 +410,7 @@ ir = Tables.float_regex(fm)
 @test ismatch(ir, "-.0")
 
 # valid floats with thousands separator
-fm = Tables.CSVFormat(';', ',', Nullable('.'), "", Dates.ISODateFormat)
+fm = Tables.CSVFormat(thousands_separator=Nullable('.'))
 ir = Tables.float_regex(fm)
 @test ismatch(ir, "0")
 @test ismatch(ir, "-1")
@@ -449,9 +445,7 @@ ir = Tables.float_regex(fm)
 @test ismatch(ir, "1.000.000.222,1")
 @test ismatch(ir, "01.000.000.222,1")
 
-fm = Tables.CSVFormat()
-fm.thousands_separator=Nullable('.')
-fm.date_format=Dates.DateFormat("dd/mm/Y")
+fm = Tables.CSVFormat(thousands_separator=Nullable('.'), date_format=Dates.DateFormat("dd/mm/Y"))
 
 raw = readdlm("example.csv", fm.dlm, String)
 
@@ -467,9 +461,7 @@ sch = Tables.infer_schema(raw, fm)
 
 tb = Tables.readcsv("example.csv", sch, fm)
 
-fm2 = Tables.CSVFormat()
-fm2.decimal_separator = '.'
-fm2.date_format=Dates.DateFormat("dd/mm/Y")
+fm2 = Tables.CSVFormat(decimal_separator='.', date_format=Dates.DateFormat("dd/mm/Y"))
 tb_copy = Tables.readcsv("example_no_ts.csv", fm2)
 @test isequal(tb, tb_copy)
 
@@ -484,7 +476,7 @@ tb_copy = Tables.readcsv("example_no_ts.csv", fm2)
 @test Tables.extract_nonempty_string("hey 2\" y\"ou") == "hey 2\" y\"ou"
 @test Tables.extract_nonempty_string("\"hey 2\" y\"ou\"") == "hey 2\" y\"ou"
 
-fm = Tables.CSVFormat(',', '.', Nullable{Char}(), "", Dates.ISODateFormat)
+fm = Tables.CSVFormat(dlm=',', decimal_separator='.', )
 tb = Tables.readcsv("example_nullable.csv", fm; header=false)
 @test get(tb[1,1] == Nullable(1))
 @test isnull(tb[2,1])
