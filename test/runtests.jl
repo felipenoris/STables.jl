@@ -264,6 +264,14 @@ append!(tb, row)
 @test tb[:b] == ["one", "two", "three", "four"]
 #@test get(tb[:c] == [ Nullable(10.0), Nullable(20.0), Nullable{Float64}(), Nullable(40.0)])
 
+tr = Tables.TableRow(tb, 2)
+@test tr[1] == 2
+@test tr[:a] == 2
+@test tr[2] == "two"
+@test tr[:b] == "two"
+@test get(tr[3] == Nullable(20.0))
+@test get(tr[:c] == Nullable(20.0))
+
 # append a matrix
 tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ Nullable(10.0), Nullable(20.0), Nullable{Float64}()] )
 mat = Array{Any}(2,3)
