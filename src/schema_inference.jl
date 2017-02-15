@@ -96,7 +96,7 @@ type_order(::Type{Float64}) = 2
 type_order(::Type{Date}) = 3
 type_order(::Type{String}) = 4
 
-function infer_schema(raw::Array{String, 2}, format::CSVFormat, header::Bool=true) :: Schema
+function infer_schema(raw::Array{String, 2}, format::CSVFormat=CSVFormat(), header::Bool=true) :: Schema
 	const FST_DATAROW = header ? 2 : 1
 	const fr = float_regex(format)
 	const ir = integer_regex(format)
@@ -128,7 +128,7 @@ function infer_schema(raw::Array{String, 2}, format::CSVFormat, header::Bool=tru
 	return Schema(schema_header, schema_datatypes)
 end
 
-function infer_schema(input, format::CSVFormat, header::Bool=true, use_mmap::Bool=false)
+function infer_schema(input, format::CSVFormat=CSVFormat(), header::Bool=true, use_mmap::Bool=false)
 	raw = readdlm(input, format.dlm, String; use_mmap=use_mmap)
 	return infer_schema(raw, format, header)
 end
