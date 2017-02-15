@@ -10,6 +10,9 @@ using Lifting
 # Grisu
 @test Tables.tostring(0.58) == "0.58"
 @test Tables.tostring(15.2) == "15.2"
+@test Tables.tostring(.000222) == "0.000222"
+@test Tables.tostring(-.2) == "-0.2"
+@test Tables.tostring(NaN) == "NaN"
 @test isapprox(parse(Tables.tostring(15.2)), 15.2)
 
 s = Tables.Schema(a=String, b=Nullable{String})
