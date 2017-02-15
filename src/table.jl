@@ -87,7 +87,8 @@ function _has_only_nullables(types::Vector{DataType}) :: Bool
 end
 
 function Table(schema::Schema, df::DataFrame)
-    
+
+    # TODO: fix this    
     @assert _has_only_nullables(schema.types) "Cannot create Table from DataFrame with non-Nullable types in Schema."
 
     rows, cols = size(df)

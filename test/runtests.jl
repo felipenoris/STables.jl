@@ -238,6 +238,18 @@ df_table = Tables.Table(df_schema, df)
 @test get(df_table[1,2]) == :a
 @test get(df_table[2,2]) == :b
 
+df_table2 = Tables.Table([Nullable{Int}, Nullable{Symbol}], df)
+@test isnull(df_table2[2,1]) == true
+@test get(df_table2[1,1]) == 1
+@test get(df_table2[1,2]) == :a
+@test get(df_table2[2,2]) == :b
+
+df_table3 = Tables.Table(df)
+@test isnull(df_table3[2,1]) == true
+@test get(df_table3[1,1]) == 1
+@test get(df_table3[1,2]) == :a
+@test get(df_table3[2,2]) == :b
+
 sch = Schema( [:a => String, :b => Int, :c => String] )
 tb = Tables.Table(sch, 5)
 tb[:a] = "fixed-"
