@@ -41,8 +41,7 @@ function pairs(s::Schema)
     result = Vector{Pair{Symbol, DataType}}(n)
 
     for i in 1:n
-        result[i][1] = s.names[i]
-        result[i][2] = s.types[i]
+        result[i] = s.names[i] => s.types[i]
     end
     return result
 end
