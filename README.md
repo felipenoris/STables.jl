@@ -3,7 +3,24 @@
 
 Yet another Table / DataFrame like Julia package.
 
+#### Installation
 ```julia
 julia> Pkg.clone("https://github.com/felipenoris/Lifting.jl.git")
 julia> Pkg.clone("https://github.com/felipenoris/Tables.jl.git")
 ```
+
+#### Features
+
+* Supports both standard arrays and NullableArrays as columns
+
+* Supports reading csv files with thousands separator
+
+* User can define schemas for tables
+
+* Supports schema inference
+
+#### Alternative libraries
+
+* [DataFrames.jl](https://github.com/JuliaStats/DataFrames.jl)
+
+* [TypedTables.jl](https://github.com/FugroRoames/TypedTables.jl)
