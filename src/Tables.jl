@@ -14,6 +14,6 @@ include("tablerow.jl")
 include("schema_inference.jl")
 include("csv.jl")
 
-export Table, Schema, TableRow
+export Table, Schema
 
 end # module Tables
