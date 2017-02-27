@@ -21,6 +21,8 @@ julia> Pkg.clone("https://github.com/felipenoris/Tables.jl.git")
 
 #### Alternative libraries
 
+* [DataTables.jl](https://github.com/JuliaData/DataTables.jl)
+
 * [DataFrames.jl](https://github.com/JuliaStats/DataFrames.jl)
 
 * [TypedTables.jl](https://github.com/FugroRoames/TypedTables.jl)
