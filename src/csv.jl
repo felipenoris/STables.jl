@@ -155,11 +155,11 @@ function _read_data!(table::Table, raw::Array{String,2}, format::CSVFormat; head
 end
 
 """
-    readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
+    readcsv(input, schema::TableSchema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
 
 header :: Bool Tells if the input file has a header in the first line. Default is `true`.
 """
-function readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
+function readcsv(input, schema::TableSchema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
     raw = readdlm(input, format.dlm, String; use_mmap=use_mmap)
     tb = Table(schema)
     return _read_data!(tb, raw, format; header=header)
@@ -185,7 +185,7 @@ function readcsv(input, types::Vector{DataType}, format::CSVFormat=CSVFormat(); 
     for col in 1:cols
         header[col] = Symbol(raw[1, col])
     end
-    schema = Schema(header, types)
+    schema = TableSchema(header, types)
     table = Table(schema)
 
     return _read_data!(table, raw, format; header=true)

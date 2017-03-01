@@ -15,15 +15,15 @@ using Lifting
 @test Tables.tostring(NaN) == "NaN"
 @test isapprox(parse(Tables.tostring(15.2)), 15.2)
 
-s = Tables.Schema(a=String, b=Nullable{String})
+s = Tables.TableSchema(a=String, b=Nullable{String})
 @test s.names == [:a, :b]
 @test s.types == [String, Nullable{String}]
 
-ss = Tables.Schema(a=String, b=[1,2])
+ss = Tables.TableSchema(a=String, b=[1,2])
 @test ss.names == [:a, :b]
 @test ss.types == [String, Int]
 
-sss = Tables.Schema(a=[1,2], b=NullableArray(["a", "b"]))
+sss = Tables.TableSchema(a=[1,2], b=NullableArray(["a", "b"]))
 @test sss.names == [:a, :b]
 @test sss.types == [Int, Nullable{String}]
 
@@ -45,7 +45,7 @@ zz = Tables._create_table_column(Nullable{Int}, 5)
 
 col_names = [:C_STRING, :C_INT, :C_FLOAT, :C_NSTRING, :C_NINT, :C_NFLOAT]
 col_types = [String, Int, Float64, Nullable{String}, Nullable{Int}, Nullable{Float64}]
-ta_schema = Tables.Schema(col_names, col_types)
+ta_schema = Tables.TableSchema(col_names, col_types)
 rows = 2
 ta = Tables.Table(ta_schema, rows)
 @test size(ta) == (2,6)
@@ -214,7 +214,7 @@ str6;1;1000,00
 @test tb_example_csv[6,4] == Date(2016,1,27)
 
 # eachrow
-sch = Tables.Schema([:a, :b, :c, :d], [Int, String, Bool, Nullable{Int}])
+sch = Tables.TableSchema([:a, :b, :c, :d], [Int, String, Bool, Nullable{Int}])
 tb = Tables.Table(sch, 3)
 tb[:a] = [1, 2, 3]
 tb[:b] = ["1", "2", "3"]
@@ -231,7 +231,7 @@ names!(tb, [:a, :b, :c, :d])
 # Table with DataFrame
 df = DataFrame(a = @data([1, NA]), b = [:a, :b])
 df_types = [ Nullable{Int}, Nullable{Symbol} ]
-df_schema = Tables.Schema([:col1, :col2], df_types)
+df_schema = Tables.TableSchema([:col1, :col2], df_types)
 df_table = Tables.Table(df_schema, df)
 @test isnull(df_table[2,1]) == true
 @test get(df_table[1,1]) == 1
@@ -250,7 +250,7 @@ df_table3 = Tables.Table(df)
 @test get(df_table3[1,2]) == :a
 @test get(df_table3[2,2]) == :b
 
-sch = Schema( [:a => String, :b => Int, :c => String] )
+sch = TableSchema( [:a => String, :b => Int, :c => String] )
 tb = Tables.Table(sch, 5)
 tb[:a] = "fixed-"
 
@@ -267,8 +267,8 @@ tb[:d] = tb[:a] .* tb[:c]
 @test tb[:c] == [ "1", "2", "3", "4", "5"]
 @test tb[:b] == fill(0, 5)
 
-sa = Schema( [:a => String, :b => Int, :c => String] )
-sb = Schema( [:a => String, :b => Int, :c => String] )
+sa = TableSchema( [:a => String, :b => Int, :c => String] )
+sb = TableSchema( [:a => String, :b => Int, :c => String] )
 @test sa == sb
 
 # append a row
@@ -310,14 +310,14 @@ append!(tb, tb2)
 #@test get(tb[:c] == [ Nullable(10.0), Nullable(20.0), Nullable{Float64}(), Nullable(40.0), Nullable{Float64}()])
 
 # Copying
-sch = Schema(a=Int, b=String)
+sch = TableSchema(a=Int, b=String)
 sch_copy = copy(sch)
 @test isequal(sch, sch_copy)
 push!(sch, :c => Float64)
 @test !isequal(sch, sch_copy)
 
 # deepcopy has the same effects for schema
-sch = Schema(a=Int, b=String)
+sch = TableSchema(a=Int, b=String)
 sch_copy = deepcopy(sch)
 @test isequal(sch, sch_copy)
 push!(sch, :c => Float64)
@@ -370,7 +370,7 @@ tb_new = [tb; tb2]
 @test size(tb) == (3, 3) # shouldn't have side-effects on original table
 @test size(tb2) == (2, 3) # shouldn't have side-effects on original table
 
-# Schema inference
+# TableSchema inference
 
 # valid integers without thousands separator
 fm = Tables.CSVFormat(decimal_separator='.')
@@ -541,7 +541,7 @@ Tables.infer_type(raw[5,3], fm, s)
 @test s == Tables.InferenceState(Float64,false) # should not go back to Int
 
 sch = Tables.infer_schema(raw, fm)
-@test sch == Schema(Symbol[:COL_A,:COL_B,:COL_C,:COL_D], DataType[String,Int64,Float64,Date])
+@test sch == TableSchema(Symbol[:COL_A,:COL_B,:COL_C,:COL_D], DataType[String,Int64,Float64,Date])
 
 tb = Tables.readcsv("example.csv", sch, fm)
 
@@ -573,5 +573,5 @@ tb = Tables.readcsv("example_nullable.csv", fm; header=false)
 @test get(tb[3,3] == Nullable(2.0))
 
 p = [:a => String, :b => Int]
-s = Tables.Schema(p)
+s = Tables.TableSchema(p)
 @test p == Tables.pairs(s)

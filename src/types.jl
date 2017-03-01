@@ -1,20 +1,33 @@
 
-type Schema
-    names::Vector{Symbol}       # column names
-    types::Vector{DataType}      # Julia types of columns
-
-    function Schema(header::Vector{Symbol}, types::Vector{DataType})
-        @assert length(header) == length(types) "Sizes mismatch: header = $(length(header)), types = $(length(types))"
-        @assert length(header) == length(unique(header)) "Column names must be unique"
-        new(header, types)
-    end
+immutable TableField
+    name::Symbol # column name
+    fieldtype::DataType # Julia type for this column
 end
 
-type Table #<: AbstractDataFrame
-    schema::Schema
+type TableSchema
+    fields::Vector{TableField}
+end
+
+TableSchema(n::Integer) = TableSchema(Vector{TableField}(n))
+
+function TableSchema(header::Vector{Symbol}, types::Vector{DataType})
+    const n = length(header)
+    @assert n == length(types) "Sizes mismatch: header = $n, types = $(length(types))"
+    @assert n == length(unique(header)) "Column names must be unique"
+    
+    ts = TableSchema(n)
+    for i in 1:n
+        ts.fields[i] = TableField(header[i], types[i])
+    end
+
+    return ts
+end
+
+type Table <: AbstractTables.AbstractTable
+    schema::TableSchema
     data::Vector{Any}
 
-    function Table(s::Schema, d::Vector{Any})
+    function Table(s::TableSchema, d::Vector{Any})
         @assert length(s.names) == length(d)
         for i = 1:length(s.types)
             @assert eltype(d[i]) == s.types[i] "Vector types don't match table's schema."

@@ -5,6 +5,7 @@ module Tables
 using NullableArrays
 using DataFrames
 using Lifting
+import AbstractTables
 
 include("grisu.jl")
 include("types.jl")
@@ -14,6 +15,6 @@ include("tablerow.jl")
 include("schema_inference.jl")
 include("csv.jl")
 
-export Table, Schema
+export Table, TableSchema, TableField
 
 end # module Tables

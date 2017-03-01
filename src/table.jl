@@ -16,7 +16,7 @@ function Base.deepcopy(t::Table)
     return Table(new_schema, new_data)
 end
 
-function Table(schema::Schema)
+function Table(schema::TableSchema)
     cols = ncol(schema)
     data = Vector{Any}(cols)
     for c in 1:cols
@@ -37,7 +37,7 @@ function Table(; kwargs...)
         v_type = isa(v, DataType) ? v : eltype(v)
         pairs[i] = s => v_type
     end
-    schema = Schema( pairs )
+    schema = TableSchema( pairs )
 
     data = Vector{Any}(n)
     for i in 1:n
@@ -47,7 +47,7 @@ function Table(; kwargs...)
     return Table(schema, data)
 end
 
-function Table{T}(schema::Schema, matrix::Array{T, 2})
+function Table{T}(schema::TableSchema, matrix::Array{T, 2})
     rows, cols = size(matrix)
     tb = Table(schema, rows)
     for c in 1:cols
@@ -66,7 +66,7 @@ _create_table_column{T}(::Type{T}, rows::Int) = error("Method not implemented fo
 
 # Creates a table with number of rows = rows.
 # Table data is not initialized.
-function Table(schema::Schema, rows::Int)
+function Table(schema::TableSchema, rows::Int)
     cols = length(names(schema))
     data = Vector{Any}(cols)
     for c in 1:cols
@@ -86,10 +86,10 @@ function _has_only_nullables(types::Vector{DataType}) :: Bool
     return true
 end
 
-function Table(schema::Schema, df::DataFrame)
+function Table(schema::TableSchema, df::DataFrame)
 
     # TODO: fix this    
-    @assert _has_only_nullables(schema.types) "Cannot create Table from DataFrame with non-Nullable types in Schema."
+    @assert _has_only_nullables(schema.types) "Cannot create Table from DataFrame with non-Nullable types in TableSchema."
 
     rows, cols = size(df)
     @assert cols == length(schema.names) "number of columns in DataFrame ($cols) does not match schema ($( length(schema.names) ))."
@@ -114,7 +114,7 @@ end
 
 function Table(types::Vector{DataType}, df::DataFrame)
     head = names(df)
-    schema = Schema(head, types)
+    schema = TableSchema(head, types)
     return Table(schema, df)
 end
 
@@ -241,7 +241,7 @@ end
 Base.showall(io::IO, table::Table) = show(io, table)
 
 function Base.append!(tb::Table, rows::Table)
-    @assert tb.schema == rows.schema "Schemas don't match"
+    @assert tb.schema == rows.schema "TableSchemas don't match"
     for c in 1:ncol(tb)
         append!(tb.data[c], rows.data[c])
     end
@@ -299,7 +299,7 @@ function Base.append!{T}(tb::Table, data::Array{T,2})
 end
 
 function Base.vcat(tb1::Table, tb2::Table)
-    @assert tb1.schema == tb2.schema "Schemas don't match"
+    @assert tb1.schema == tb2.schema "TableSchemas don't match"
     tb1_copy = deepcopy(tb1)
     tb2_copy = deepcopy(tb2)
     return append!(tb1_copy, tb2_copy)
