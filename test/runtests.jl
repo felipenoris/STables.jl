@@ -213,7 +213,9 @@ str6;1;1000,00
 @test tb_example_csv[6,3] == -1000.0
 @test tb_example_csv[6,4] == Date(2016,1,27)
 
-# eachrow
+# collect a TableRow
+@test collect(Tables.TableRow(tb_example_csv, 1)) == ["str1", 10, 1000, Date(2016,1,2)]
+
 sch = Tables.Schema([:a, :b, :c, :d], [Int, String, Bool, Nullable{Int}])
 tb = Tables.Table(sch, 3)
 tb[:a] = [1, 2, 3]
@@ -250,6 +252,7 @@ df_table3 = Tables.Table(df)
 @test get(df_table3[1,2]) == :a
 @test get(df_table3[2,2]) == :b
 
+# eachrow
 sch = Schema( [:a => String, :b => Int, :c => String] )
 tb = Tables.Table(sch, 5)
 tb[:a] = "fixed-"
