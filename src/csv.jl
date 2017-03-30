@@ -83,9 +83,7 @@ end
 
 # parse Nullable Number
 function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
-
     col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
-
     for r in FST_DATAROW_INDEX:rows
         r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
         @inbounds value = raw_column[r]
@@ -110,9 +108,9 @@ end
 
 # parse Nullable Date
 function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
-
     col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
+        r_ = r + ROW_OFFSET  # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
         @inbounds value = raw_column[r]
 
         if isnullstr(value, format)
