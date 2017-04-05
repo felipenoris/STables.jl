@@ -122,7 +122,12 @@ function infer_schema(raw::Array{String, 2}, format::CSVFormat=CSVFormat(), head
 		for r in FST_DATAROW:rows
 			infer_type(raw[r,c], format, s, fr, ir)
 		end
-		schema_datatypes[c] = datatype(s)
+		t = datatype(s)
+		if t == Nullable{Any}
+			schema_datatypes[c] = Nullable{String}
+		else
+			schema_datatypes[c] = t
+		end
 	end
 
 	return Schema(schema_header, schema_datatypes)
