@@ -5,7 +5,7 @@ function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{T}, 
     col_data = _create_table_column(T, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
         r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
-        @inbounds col_data[r_] = raw_column[r]
+        @inbounds col_data[r_] = strip(raw_column[r])
     end
     return col_data
 end
