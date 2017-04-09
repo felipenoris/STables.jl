@@ -133,7 +133,7 @@ function infer_schema(raw::Array{String, 2}, format::CSVFormat=CSVFormat(), head
 	return Schema(schema_header, schema_datatypes)
 end
 
-function infer_schema(input, format::CSVFormat=CSVFormat(), header::Bool=true, use_mmap::Bool=false)
+function infer_schema(input, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
 	raw = readdlm(input, format.dlm, String; use_mmap=use_mmap)
 	return infer_schema(raw, format, header)
 end
