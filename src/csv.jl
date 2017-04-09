@@ -48,14 +48,14 @@ end
 # doesn't know how to parse other types
 _read_column{T}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) = error("Parsing $T not implemented.")
 
-function extract_nonempty_string(value::AbstractString)
-    const regex_with_quotes = r"^\s*\"\s*(?<str>.*)\s*\"\s*$"
-    const regex_without_quotes = r"^\s*(?<str>.*)\s*$"
-    
-    if ismatch(regex_with_quotes, value)
-        m = match(regex_with_quotes, value)
-    elseif ismatch(regex_without_quotes, value)
-        m = match(regex_without_quotes, value)
+const REGEX_WITH_QUOTES = r"^\s*\"\s*(?<str>.*)\s*\"\s*$"
+const REGEX_WITHOUT_QUOTES = r"^\s*(?<str>.*)\s*$"
+
+function extract_nonempty_string(value::AbstractString)    
+    if ismatch(REGEX_WITH_QUOTES, value)
+        m = match(REGEX_WITH_QUOTES, value)
+    elseif ismatch(REGEX_WITHOUT_QUOTES, value)
+        m = match(REGEX_WITHOUT_QUOTES, value)
     else
         error("Should not happen...")
     end
