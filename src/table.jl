@@ -282,7 +282,7 @@ function Base.append!{T}(tb::Table, data::Array{T,2})
     data_rows, data_cols = size(data)
     @assert cols == data_cols "Number of columns doesn't match"
 
-    data_lifted = Array(Any, data_rows, data_cols)
+    data_lifted = Array{Any}(data_rows, data_cols)
     for c in 1:data_cols
         for r in 1:data_rows
             if isa(data[r,c], Nullable) && isnull(data[r,c])
