@@ -130,7 +130,7 @@ function _read_data!(table::Table, raw::Array{String,2}, format::CSVFormat; head
     rows, cols = size(raw)
 
     # Check if header is consistent with schema
-    @assert cols == length(table.schema.names) "CSV not consistent with given schema. ncols in file: $cols; ncols in schema: $(length(schema.names))."
+    @assert cols == length(table.schema.names) "CSV not consistent with given schema. ncols in file: $cols; ncols in schema: $(length(table.schema.names))."
     
     if header
         ROW_OFFSET = -1
