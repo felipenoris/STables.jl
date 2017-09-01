@@ -157,23 +157,26 @@ end
 
 header :: Bool Tells if the input file has a header in the first line. Default is `true`.
 """
-function readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
-    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap)
+function readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0)
+    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
     tb = Table(schema)
     return _read_data!(tb, raw, format; header=header)
 end
 
-# Uses schema inference
-function readcsv(input, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
-    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap)
+"""
+    readcsv(input, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
+
+Uses Schema inference.
+"""
+function readcsv(input, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0)
+    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
     schema = infer_schema(raw, format, header)
     tb = Table(schema)
     return _read_data!(tb, raw, format; header=header)
 end
 
-function readcsv(input, types::Vector{DataType}, format::CSVFormat=CSVFormat(); use_mmap::Bool=false)
-
-    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap)
+function readcsv(input, types::Vector{DataType}, format::CSVFormat=CSVFormat(); use_mmap::Bool=false, skipstart=0)
+    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
 
     rows, cols = size(raw)
     @assert cols == length(types) "Number of cols in file is not $(length(types)): found $cols"
