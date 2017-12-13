@@ -16,3 +16,5 @@ function Base.collect(row::TableRow)
 	end
 	return out
 end
+
+Base.getindex(row::TableRow, ::Colon) = collect(row)

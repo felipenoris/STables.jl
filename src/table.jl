@@ -161,7 +161,7 @@ end
 Base.getindex(tb::Table, r::Int, c::Int) = tb.data[c][r]
 Base.getindex(tb::Table, colname::AbstractString) = getindex(tb, Symbol(colname))
 Base.getindex(tb::Table, ::Colon, c::Int) = tb.data[c]
-Base.getindex(tb::Table, r::Int, ::Colon) = error("Sorry... Not supported.")
+Base.getindex(tb::Table, r::Int, ::Colon) = error("Not supported. Try Tables.TableRow(tb, $r)[:]")
 Base.getindex(tb::Table, r::Int, colname::Symbol) = getindex(tb, colname)[r]
 Base.getindex(tb::Table, colname::Symbol, r::Int) = getindex(tb, r, colname)
 
