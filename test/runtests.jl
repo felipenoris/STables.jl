@@ -83,6 +83,8 @@ ta[2,6] = 2.3
 @test isnull(ta[2,5])
 @test lift(ta[2,6] == unlift(2.3))
 
+@test lift.(Tables.TableRow(ta, 1)[:]) == lift.([ "1,1", 5, 2.2, unlift("1;4"), unlift(5), unlift(2.3) ])
+
 # Scalar attribution to column
 @test ta[:C_STRING] == ["1,1", "1;1"]
 ta[:C_STRING] = "string"
