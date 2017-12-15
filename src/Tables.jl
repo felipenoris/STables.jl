@@ -2,8 +2,7 @@
 __precompile__(true)
 module Tables
 
-using NullableArrays
-using DataFrames
+using NullableArrays, Missings, DataFrames
 using Lifting
 
 include("grisu.jl")
