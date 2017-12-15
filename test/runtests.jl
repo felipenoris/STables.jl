@@ -233,7 +233,7 @@ names!(tb, [:a, :b, :c, :d])
 @test get(tb[1, 4]) == 1
 
 # Table with DataFrame
-df = DataFrame(a = @data([1, NA]), b = [:a, :b])
+df = DataFrame(a = [1, missing], b = [:a, :b])
 df_types = [ Nullable{Int}, Nullable{Symbol} ]
 df_schema = Tables.Schema([:col1, :col2], df_types)
 df_table = Tables.Table(df_schema, df)

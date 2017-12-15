@@ -88,11 +88,11 @@ end
 
 function Table(schema::Schema, df::DataFrame)
 
-    # TODO: fix this    
+    # TODO: fix this
     @assert _has_only_nullables(schema.types) "Cannot create Table from DataFrame with non-Nullable types in Schema."
 
     rows, cols = size(df)
-    @assert cols == length(schema.names) "number of columns in DataFrame ($cols) does not match schema ($( length(schema.names) ))."
+    @assert cols == length(schema.names) "number of columns in DataFrame ($cols) does not match schema ($(length(schema.names)))."
     data = Vector{Any}(cols)
     for c in 1:cols
         col_type = schema.types[c]
@@ -100,7 +100,7 @@ function Table(schema::Schema, df::DataFrame)
         
         for r in 1:rows
             value = df[r,c]
-            if isna(value)
+            if ismissing(value)
                 col_data[r] = col_type()
             else
                 col_data[r] = value
@@ -128,7 +128,7 @@ function Table(df::DataFrame)
         for r in 1:rows
             value = df[r,c]
             
-            if !isna(value)
+            if !ismissing(value)
                 types[c] = unlift(typeof(value))
                 break
             end
