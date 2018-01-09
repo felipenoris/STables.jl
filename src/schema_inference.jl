@@ -35,7 +35,7 @@ function float_regex(fm::CSVFormat)
 	end
 end
 
-type InferenceState
+mutable struct InferenceState
 	datatype::DataType
 	isnullable::Bool
 end

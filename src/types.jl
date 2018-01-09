@@ -1,5 +1,5 @@
 
-type Schema
+mutable struct Schema
     names::Vector{Symbol}       # column names
     types::Vector{DataType}      # Julia types of columns
 
@@ -10,7 +10,7 @@ type Schema
     end
 end
 
-type Table #<: AbstractDataFrame
+mutable struct Table #<: AbstractDataFrame
     schema::Schema
     data::Vector{Any}
 
@@ -23,16 +23,16 @@ type Table #<: AbstractDataFrame
     end
 end
 
-immutable TableRow
+struct TableRow
     table::Table
     row::Int
 end
 
-immutable TableRowIterator
+struct TableRowIterator
     table::Table
 end
 
-type CSVFormat
+mutable struct CSVFormat
     dlm::Char
     decimal_separator::Char
     thousands_separator::Nullable{Char}

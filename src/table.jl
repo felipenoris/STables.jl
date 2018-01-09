@@ -47,7 +47,7 @@ function Table(; kwargs...)
     return Table(schema, data)
 end
 
-function Table{T}(schema::Schema, matrix::Array{T, 2})
+function Table(schema::Schema, matrix::Array{T, 2}) where {T}
     rows, cols = size(matrix)
     tb = Table(schema, rows)
     for c in 1:cols
@@ -58,11 +58,11 @@ function Table{T}(schema::Schema, matrix::Array{T, 2})
     return tb
 end
 
-_create_table_column{T}(::Type{Nullable{T}}, rows::Int) = NullableArray{T}(rows)
+_create_table_column(::Type{Nullable{T}}, rows::Int) where {T} = NullableArray{T}(rows)
 _create_table_column(::Type{String}, rows::Int) = fill("", rows)
-_create_table_column{T<:Number}(::Type{T}, rows::Int) = zeros(T, rows)
+_create_table_column(::Type{T}, rows::Int) where {T<:Number} = zeros(T, rows)
 _create_table_column(::Type{Date}, rows::Int) = fill(Date(0), rows)
-_create_table_column{T}(::Type{T}, rows::Int) = error("Method not implemented for type $T")
+_create_table_column(::Type{T}, rows::Int) where {T} = error("Method not implemented for type $T")
 
 # Creates a table with number of rows = rows.
 # Table data is not initialized.
@@ -197,7 +197,7 @@ function Base.setindex!(tb::Table, value, colname::Symbol, r::Int)
     tb.data[index][r] = value
 end
 
-function Base.setindex!{T}(tb::Table, value::Vector{T}, colname::Symbol)
+function Base.setindex!(tb::Table, value::Vector{T}, colname::Symbol) where {T}
     index = _column_index__create_column(tb, colname => eltype(value))
     r = nrow(tb)
     @assert length(value) == r
@@ -205,7 +205,7 @@ function Base.setindex!{T}(tb::Table, value::Vector{T}, colname::Symbol)
     tb.data[index] = value
 end
 
-function Base.setindex!{T}(tb::Table, value::NullableVector{T}, colname::Symbol)
+function Base.setindex!(tb::Table, value::NullableVector{T}, colname::Symbol) where {T}
     index = _column_index__create_column(tb, colname => eltype(value))
     r = nrow(tb)
     @assert length(value) == r
@@ -248,7 +248,7 @@ function Base.append!(tb::Table, rows::Table)
     return tb
 end
 
-function Base.push!{T}(tb::Table, row::Array{T,1})
+function Base.push!(tb::Table, row::Array{T,1}) where {T}
     # Check number of columns
     const cols = length(row)
     @assert cols == ncol(tb) "Number of columns doesn't match vector size."
@@ -274,9 +274,9 @@ function Base.push!{T}(tb::Table, row::Array{T,1})
     return append!(tb, tb_tmp)
 end
 
-Base.append!{T}(tb::Table, row::Array{T,1}) = push!(tb, row)
+Base.append!(tb::Table, row::Array{T,1}) where {T} = push!(tb, row)
 
-function Base.append!{T}(tb::Table, data::Array{T,2})
+function Base.append!(tb::Table, data::Array{T,2}) where {T}
     # Check number of columns
     const cols = ncol(tb)
     data_rows, data_cols = size(data)
@@ -305,7 +305,7 @@ function Base.vcat(tb1::Table, tb2::Table)
     return append!(tb1_copy, tb2_copy)
 end
 
-function Base.vcat{T}(tb::Table, data::Array{T,1})
+function Base.vcat(tb::Table, data::Array{T,1}) where {T}
     if isempty(data)
         return deepcopy(tb)
     else
@@ -314,7 +314,7 @@ function Base.vcat{T}(tb::Table, data::Array{T,1})
     end
 end
 
-function Base.vcat{T}(tb::Table, data::Array{T,2})
+function Base.vcat(tb::Table, data::Array{T,2}) where {T}
     if isempty(data)
         return deepcopy(tb)
     else

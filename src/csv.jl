@@ -1,6 +1,6 @@
 
 # parse String
-function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
+function _read_column(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:AbstractString}
 
     col_data = _create_table_column(T, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
@@ -11,7 +11,7 @@ function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{T}, 
 end
 
 # parse Number
-function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
+function _read_column(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:Number}
 
     col_data = _create_table_column(T, rows + ROW_OFFSET)
 
@@ -35,7 +35,7 @@ function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{T}, ROW_OFFS
 end
 
 # parse Date
-function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
+function _read_column(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:Dates.TimeType}
 
     col_data = _create_table_column(T, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
@@ -46,7 +46,7 @@ function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{T}, 
 end
 
 # doesn't know how to parse other types
-_read_column{T}(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) = error("Parsing $T not implemented.")
+_read_column(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T} = error("Parsing $T not implemented.")
 
 const REGEX_WITH_QUOTES = r"^\s*\"\s*(?<str>.*)\s*\"\s*$"
 const REGEX_WITHOUT_QUOTES = r"^\s*(?<str>.*)\s*$"
@@ -64,7 +64,7 @@ function extract_nonempty_string(value::AbstractString)
 end
 
 # parse Nullable String
-function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
+function _read_column(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:AbstractString}
 
     col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
@@ -82,7 +82,7 @@ function _read_column{T<:AbstractString}(raw_column::Vector{String}, ::Type{Null
 end
 
 # parse Nullable Number
-function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
+function _read_column(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:Number}
     col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
         r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
@@ -107,7 +107,7 @@ function _read_column{T<:Number}(raw_column::Vector{String}, ::Type{Nullable{T}}
 end
 
 # parse Nullable Date
-function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat)
+function _read_column(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:Dates.TimeType}
     col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
     for r in FST_DATAROW_INDEX:rows
         r_ = r + ROW_OFFSET  # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
@@ -123,7 +123,7 @@ function _read_column{T<:Dates.TimeType}(raw_column::Vector{String}, ::Type{Null
 end
 
 # doesn't know how to parse other nullables
-_read_column{T}(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) = error("Parsing Nullable{$T} not implemented.")
+_read_column(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T} = error("Parsing Nullable{$T} not implemented.")
 
 function _read_data!(table::Table, raw::Array{String,2}, format::CSVFormat; header::Bool=true)
 
@@ -193,7 +193,7 @@ function readcsv(input, types::Vector{DataType}, format::CSVFormat=CSVFormat(); 
 end
 
 # Converts to string
-function _write_string{T<:AbstractFloat}(io::IO, value::T, format::CSVFormat)
+function _write_string(io::IO, value::T, format::CSVFormat) where {T<:AbstractFloat}
     local result::String
     result = tostring(value)
 
@@ -205,9 +205,9 @@ function _write_string{T<:AbstractFloat}(io::IO, value::T, format::CSVFormat)
     write(io, result)
 end
 
-_write_string{T<:Integer}(io::IO, value::T, format::CSVFormat) = write(io, value)
+_write_string(io::IO, value::T, format::CSVFormat) where {T<:Integer} = write(io, value)
 
-function _write_string{T<:AbstractString}(io::IO, value::T, format::CSVFormat)
+function _write_string(io::IO, value::T, format::CSVFormat) where {T<:AbstractString}
     # Apply quotes if there´s a delimiter inside the string (replicate MS Excel behavior)
     if in(format.dlm, value)
         write(io, '"')
@@ -219,9 +219,9 @@ function _write_string{T<:AbstractString}(io::IO, value::T, format::CSVFormat)
 end
 
 _write_string(io::IO, value::Int, format::CSVFormat) = write(io, string(value))
-_write_string{T<:Dates.TimeType}(io::IO, value::T, format::CSVFormat) = write(io, Dates.format(value, format.date_format))
+_write_string(io::IO, value::T, format::CSVFormat) where {T<:Dates.TimeType} = write(io, Dates.format(value, format.date_format))
 
-function _write_string{T}(io::IO, value::Nullable{T}, format::CSVFormat)
+function _write_string(io::IO, value::Nullable{T}, format::CSVFormat) where {T}
     if isnull(value)
         write(io, format.null_str)
     else
@@ -283,10 +283,10 @@ function readcsv!(filepath::String, tb::Table;
 end
 =#
 
-#function _read_column!{T}(col_data::Vector{T}, raw_column::Vector{String})
+#function _read_column!(col_data::Vector{T}, raw_column::Vector{String}) where {T}
 
 #end
 
-#function _read_value!{T}(col_data::NullableVector{T}, row_index::Int, value::String)
+#function _read_value!(col_data::NullableVector{T}, row_index::Int, value::String) where {T}
 
 #end
