@@ -128,7 +128,7 @@ function Table(df::DataFrame)
         for r in 1:rows
             value = df[r,c]
             
-            if !ismissing(value) && value != NA
+            if !Missings.ismissing(value) && !DataArrays.isna(value)
                 types[c] = unlift(typeof(value))
                 break
             end

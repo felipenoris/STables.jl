@@ -4,3 +4,4 @@ NullableArrays
 ExcelReaders
 Missings
 DataFrames
+DataArrays

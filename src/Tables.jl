@@ -4,8 +4,9 @@ module Tables
 
 @assert VERSION >= v"0.6.0" "Tables.jl requires Julia v0.6.0 or newer."
 
-using NullableArrays, Missings, DataFrames
+using NullableArrays, DataFrames
 using Lifting
+import Missings, DataArrays
 
 include("grisu.jl")
 include("types.jl")
