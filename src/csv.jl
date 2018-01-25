@@ -244,7 +244,7 @@ end
 
 function writecsv(filepath::String, tb::Union{AbstractDataFrame, Table}, format::CSVFormat=CSVFormat(); header::Bool=true)
 
-    const LB = '\n' # line break
+    LB = '\n' # line break
     io = open(filepath, "w")
     rows, cols = size(tb)
 
