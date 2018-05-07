@@ -6,7 +6,7 @@ using Base.Test
 using NullableArrays
 using DataFrames
 using Lifting
-using Missings
+import Missings
 
 # Grisu
 @test Tables.tostring(0.58) == "0.58"

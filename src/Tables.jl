@@ -6,7 +6,7 @@ module Tables
 
 using NullableArrays, DataFrames
 using Lifting
-import Missings, DataArrays
+import Missings
 
 include("grisu.jl")
 include("types.jl")
