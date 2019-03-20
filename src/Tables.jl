@@ -1,12 +1,11 @@
 
-__precompile__(true)
 module Tables
 
-@assert VERSION >= v"0.6.0" "Tables.jl requires Julia v0.6.0 or newer."
+@assert VERSION >= v"0.7-" "Tables.jl requires Julia v0.7.0 or newer."
 
-using NullableArrays, DataFrames
-using Lifting
-import Missings
+using DataFrames
+using Dates
+import DelimitedFiles
 
 include("grisu.jl")
 include("types.jl")

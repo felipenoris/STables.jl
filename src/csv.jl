@@ -1,129 +1,69 @@
 
-# parse String
-function _read_column(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:AbstractString}
-
-    col_data = _create_table_column(T, rows + ROW_OFFSET)
-    for r in FST_DATAROW_INDEX:rows
-        r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
-        @inbounds col_data[r_] = strip(raw_column[r])
-    end
-    return col_data
+"""Converts 100.000.000,00 to 100000000,00"""
+@inline function remove_thousands_separator(value::T, ts::Nothing) :: T where {T<:AbstractString}
+    return value
 end
 
-# parse Number
-function _read_column(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:Number}
-
-    col_data = _create_table_column(T, rows + ROW_OFFSET)
-
-    for r in FST_DATAROW_INDEX:rows
-        r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
-        @inbounds value = raw_column[r]
-        
-        # Converts 100.000.000,00 to 100000000,00
-        if !isnull(format.thousands_separator)
-            value = replace(value, get(format.thousands_separator), "")
-        end
-
-        # Converts 1000,00 to 1000.00
-        if format.decimal_separator != '.'
-            value = replace(value, format.decimal_separator, '.')
-        end
-
-        @inbounds col_data[r_] = parse(T, value)
-    end
-    return col_data
+@inline function remove_thousands_separator(value::T, ts::Char) :: T where {T<:AbstractString}
+    return replace(value, ts => "")
 end
 
-# parse Date
-function _read_column(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:Dates.TimeType}
-
-    col_data = _create_table_column(T, rows + ROW_OFFSET)
-    for r in FST_DATAROW_INDEX:rows
-        r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
-        @inbounds col_data[r_] = Date(raw_column[r], format.date_format)
+"""Converts 1000,00 to 1000.00"""
+@inline function fix_decimal_separator(value::T, ds::Char) :: T where {T<:AbstractString}
+    if ds != '.'
+        return replace(value, ds => '.')
+    else
+        return value
     end
-    return col_data
+end
+
+@inline function _parse_raw_value(raw_value::String, ::Type{T}, format::CSVFormat) where {T<:AbstractString}
+    stripped = strip(raw_value)
+
+    # strips '"' character if on both sides of string
+    if startswith(stripped, '"') && endswith(stripped, '"')
+        return strip(stripped, '"')
+    else
+        return stripped
+    end
+end
+
+@inline function _parse_raw_value(raw_value::String, ::Type{T}, format::CSVFormat) where {T<:Number}
+    value = remove_thousands_separator(raw_value, format.thousands_separator)
+    value = fix_decimal_separator(value, format.decimal_separator)
+    return parse(T, value)
+end
+
+@inline function _parse_raw_value(raw_value::String, ::Type{T}, format::CSVFormat) where {T<:Dates.TimeType}
+    return Date(raw_value, format.date_format)
+end
+
+@inline function _parse_raw_value(raw_value::String, ::Type{Union{Missing, T}}, format::CSVFormat) where {T}
+    if raw_value == format.missing_str
+        return missing
+    else
+        return _parse_raw_value(raw_value, T, format)
+    end
 end
 
 # doesn't know how to parse other types
-_read_column(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T} = error("Parsing $T not implemented.")
+function _parse_raw_value(raw_value::String, ::Type{T}, format::CSVFormat) where {T}
+    error("Parsing $T not implemented.")
+end
+
+function _read_column(raw_column::Vector{String}, ::Type{T}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int,
+    rows::Int, format::CSVFormat) where {T}
+
+    col_data = _create_table_column(T, rows + ROW_OFFSET)
+    @inbounds for r in FST_DATAROW_INDEX:rows
+        r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
+        col_data[r_] = _parse_raw_value(raw_column[r], T, format)
+    end
+    return col_data
+end
 
 const REGEX_WITH_QUOTES = r"^\s*\"\s*(?<str>.*)\s*\"\s*$"
 const REGEX_WITHOUT_QUOTES = r"^\s*(?<str>.*)\s*$"
-
-function extract_nonempty_string(value::AbstractString)    
-    if ismatch(REGEX_WITH_QUOTES, value)
-        m = match(REGEX_WITH_QUOTES, value)
-    elseif ismatch(REGEX_WITHOUT_QUOTES, value)
-        m = match(REGEX_WITHOUT_QUOTES, value)
-    else
-        error("Should not happen...")
-    end
-
-    return strip(m[:str])
-end
-
-# parse Nullable String
-function _read_column(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:AbstractString}
-
-    col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
-    for r in FST_DATAROW_INDEX:rows
-        r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
-        
-        @inbounds value = raw_column[r]
-
-        if isnullstr(value, format)
-            continue
-        else
-            @inbounds col_data[r_] = extract_nonempty_string(value)
-        end
-    end
-    return col_data
-end
-
-# parse Nullable Number
-function _read_column(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:Number}
-    col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
-    for r in FST_DATAROW_INDEX:rows
-        r_ = r + ROW_OFFSET # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
-        @inbounds value = raw_column[r]
-        
-        if isnullstr(value, format)
-            continue
-        else
-            # Converts 100.000.000,00 to 100000000,00
-            if !isnull(format.thousands_separator)
-                value = replace(value, get(format.thousands_separator), "")
-            end
-
-            # Converts 1000,00 to 1000.00
-            if format.decimal_separator != '.'
-                value = replace(value, format.decimal_separator, '.')
-            end
-            @inbounds col_data[r_] = parse(T, value)
-        end
-    end
-    return col_data
-end
-
-# parse Nullable Date
-function _read_column(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T<:Dates.TimeType}
-    col_data = _create_table_column(Nullable{T}, rows + ROW_OFFSET)
-    for r in FST_DATAROW_INDEX:rows
-        r_ = r + ROW_OFFSET  # r_ is the line index of the destination table. If raw contains a header, r_ = r - 1 . Otherwise, r_ = r
-        @inbounds value = raw_column[r]
-
-        if isnullstr(value, format)
-            continue
-        else
-            @inbounds col_data[r_] = Date(value, format.date_format)
-        end
-    end
-    return col_data
-end
-
-# doesn't know how to parse other nullables
-_read_column(raw_column::Vector{String}, ::Type{Nullable{T}}, ROW_OFFSET::Int, FST_DATAROW_INDEX::Int, rows::Int, format::CSVFormat) where {T} = error("Parsing Nullable{$T} not implemented.")
 
 function _read_data!(table::Table, raw::Array{String,2}, format::CSVFormat; header::Bool=true)
 
@@ -131,7 +71,7 @@ function _read_data!(table::Table, raw::Array{String,2}, format::CSVFormat; head
 
     # Check if header is consistent with schema
     @assert cols == length(table.schema.names) "CSV not consistent with given schema. ncols in file: $cols; ncols in schema: $(length(table.schema.names))."
-    
+
     if header
         ROW_OFFSET = -1
     else
@@ -140,13 +80,12 @@ function _read_data!(table::Table, raw::Array{String,2}, format::CSVFormat; head
 
     FST_DATAROW_INDEX = 1 - ROW_OFFSET # this is the index of the first data row in $raw
 
-    col_array = Array{Any}(cols)
-    
-    for col in 1:cols
-        @inbounds col_type = table.schema.types[col]
-        @inbounds col_array[col] = _read_column(raw[:,col], col_type, ROW_OFFSET, FST_DATAROW_INDEX, rows, format)
+    col_array = Vector{Any}(undef, cols)
+    @inbounds for col in 1:cols
+        col_type = table.schema.types[col]
+        col_array[col] = _read_column(raw[:,col], col_type, ROW_OFFSET, FST_DATAROW_INDEX, rows, format)
     end
-    
+
     # Set table data without checks
     table.data = col_array
     return table
@@ -158,7 +97,7 @@ end
 header :: Bool Tells if the input file has a header in the first line. Default is `true`.
 """
 function readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0)
-    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
+    raw = DelimitedFiles.readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
     tb = Table(schema)
     return _read_data!(tb, raw, format; header=header)
 end
@@ -169,23 +108,20 @@ end
 Uses Schema inference.
 """
 function readcsv(input, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0)
-    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
+    raw = DelimitedFiles.readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
     schema = infer_schema(raw, format, header)
     tb = Table(schema)
     return _read_data!(tb, raw, format; header=header)
 end
 
-function readcsv(input, types::Vector{DataType}, format::CSVFormat=CSVFormat(); use_mmap::Bool=false, skipstart=0)
-    raw = readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
+function readcsv(input, types::Vector{T}, format::CSVFormat=CSVFormat(); use_mmap::Bool=false, skipstart=0) where {T<:Type}
+    raw = DelimitedFiles.readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
 
     rows, cols = size(raw)
     @assert cols == length(types) "Number of cols in file is not $(length(types)): found $cols"
 
     # first row contains header
-    header = Vector{Symbol}(cols)
-    for col in 1:cols
-        header[col] = Symbol(raw[1, col])
-    end
+    header = [ Symbol(raw[1, col]) for col in 1:cols ]
     schema = Schema(header, types)
     table = Table(schema)
 
@@ -198,7 +134,7 @@ function _write_string(io::IO, value::T, format::CSVFormat) where {T<:AbstractFl
     result = tostring(value)
 
     if format.decimal_separator != '.'
-        result = replace(result, '.', ',')
+        result = replace(result, '.' => ',')
     end
 
     # TODO : support thousands_separator
@@ -220,14 +156,7 @@ end
 
 _write_string(io::IO, value::Int, format::CSVFormat) = write(io, string(value))
 _write_string(io::IO, value::T, format::CSVFormat) where {T<:Dates.TimeType} = write(io, Dates.format(value, format.date_format))
-
-function _write_string(io::IO, value::Nullable{T}, format::CSVFormat) where {T}
-    if isnull(value)
-        write(io, format.null_str)
-    else
-        _write_string(io, lift(value), format)
-    end
-end
+_write_string(io::IO, ::Missing, format::CSVFormat) = write(io, format.missing_str)
 
 # Fallback
 function _write_string(io::IO, value, format::CSVFormat)
@@ -258,7 +187,7 @@ function writecsv(filepath::String, tb::Union{AbstractDataFrame, Table}, format:
             end
             write(io, LB)
         end
-            
+
         # data
         for r in 1:rows
             for c in 1:cols
@@ -271,7 +200,7 @@ function writecsv(filepath::String, tb::Union{AbstractDataFrame, Table}, format:
     finally
         close(io)
     end
-    
+
     nothing
 end
 

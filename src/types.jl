@@ -1,9 +1,9 @@
 
 mutable struct Schema
     names::Vector{Symbol}       # column names
-    types::Vector{DataType}      # Julia types of columns
+    types::Vector{Type}      # Julia types of columns
 
-    function Schema(header::Vector{Symbol}, types::Vector{DataType})
+    function Schema(header::Vector{Symbol}, types::Vector{Type})
         @assert length(header) == length(types) "Sizes mismatch: header = $(length(header)), types = $(length(types))"
         @assert length(header) == length(unique(header)) "Column names must be unique"
         new(header, types)
@@ -32,25 +32,24 @@ struct TableRowIterator
     table::Table
 end
 
+check_ds_ts_clash(decimal_separator::Char, thousands_separator::Nothing) = nothing
+function check_ds_ts_clash(decimal_separator::Char, thousands_separator::Char)
+    @assert thousands_separator != decimal_separator "decimal_separator ($decimal_separator) conflicts with thousands_separator ($thousands_separator)."
+end
+
 mutable struct CSVFormat
     dlm::Char
     decimal_separator::Char
-    thousands_separator::Nullable{Char}
-    null_str::String
+    thousands_separator::Union{Nothing, Char}
+    missing_str::String
     date_format::Dates.DateFormat
 
-    function CSVFormat(dlm::Char, decimal_separator::Char, thousands_separator::Nullable{Char}, null_str::String, date_format::Dates.DateFormat)
-        # Checks if input is consistent
-        if !isnull(thousands_separator)
-            ts_char = get(thousands_separator)
-            if ts_char == decimal_separator
-                error("decimal_separator ($decimal_separator) conflicts with thousands_separator ($ts_char).")
-            end
-        end
-        new(dlm,decimal_separator,thousands_separator,null_str,date_format)
+    function CSVFormat(dlm::Char, decimal_separator::Char, thousands_separator::Union{Nothing, Char}, missing_str::String, date_format::Dates.DateFormat)
+        check_ds_ts_clash(decimal_separator, thousands_separator)
+        new(dlm, decimal_separator, thousands_separator, missing_str, date_format)
     end
 end
 
 # Create with default values
-CSVFormat(; dlm::Char=';', decimal_separator::Char=',', thousands_separator::Nullable{Char}=Nullable{Char}(), null_str::String="", date_format::Dates.DateFormat=Dates.ISODateFormat) = CSVFormat(dlm, decimal_separator, thousands_separator, null_str, date_format)
-isnullstr(str, fm::CSVFormat) = str == fm.null_str
+CSVFormat(; dlm::Char=';', decimal_separator::Char=',', thousands_separator::Union{Nothing, Char}=nothing, missing_str::String="", date_format::Dates.DateFormat=Dates.ISODateFormat) = CSVFormat(dlm, decimal_separator, thousands_separator, missing_str, date_format)
+ismissingstr(str, fm::CSVFormat) = str == fm.missing_str

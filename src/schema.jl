@@ -16,18 +16,19 @@ function Base.deepcopy(s::Schema)
     return Schema(new_header, new_types)
 end
 
-function Schema(header::Vector, types::Vector{DataType})
+function Schema(header::Vector, types::Vector{T}) where {T<:Type}
     header = [Symbol(x) for x in header]
+    types = Type[x for x in types]
     return Schema(header, types)
 end
 
 # Allow for syntax: Schema( [:a => String, :b => Int] )
-function Schema(v::Vector{Pair{Symbol, DataType}})
+function Schema(v::Vector{Pair{Symbol, T}}) where {T<:Type}
     n = length(v)
-    head = Vector{Symbol}(n)
-    types = Vector{DataType}(n)
+    head = Vector{Symbol}(undef, n)
+    types = Vector{Type}(undef, n)
 
-    for i in 1:n
+    @inbounds for i in 1:n
         head[i] = v[i][1]
         types[i] = v[i][2]
     end
@@ -38,9 +39,9 @@ end
 # Returns [ :a => String, :b => Int ]
 function pairs(s::Schema)
     n = ncol(s)
-    result = Vector{Pair{Symbol, DataType}}(n)
+    result = Vector{Pair{Symbol, Type}}(undef, n)
 
-    for i in 1:n
+    @inbounds for i in 1:n
         result[i] = s.names[i] => s.types[i]
     end
     return result
@@ -49,18 +50,19 @@ end
 # Allow syntax: Schema(a=String, b=Int)
 function Schema(; kwargs...)
     n = length(kwargs)
-    head = Vector{Symbol}(n)
-    types = Vector{DataType}(n)
-    for i in 1:n
-        k, v = kwargs[i]
+    head = Vector{Symbol}(undef, n)
+    types = Vector{Type}(undef, n)
+
+    @inbounds for (i, p) in enumerate(kwargs)
+        k, v = p
         head[i] = k
-        types[i] = isa(v, DataType) ? v : eltype(v)
+        types[i] = isa(v, Type) ? v : eltype(v)
     end
 
     return Schema(head, types)
 end
 
-function Base.push!(s::Schema, column_description::Pair{Symbol, DataType})
+function Base.push!(s::Schema, column_description::Pair{Symbol, T}) where {T<:Type}
     push!(s.names, column_description[1])
     push!(s.types, column_description[2])
 end

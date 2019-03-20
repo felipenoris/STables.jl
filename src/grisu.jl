@@ -2,26 +2,26 @@
 using Base.Grisu
 
 function tostring(x::AbstractFloat, n::Int=15)
-	#
-	# Based on Base.Grisu._show(io::IO, x::AbstractFloat, mode, n::Int, typed, compact)
-	# See julia/base/grisu/grisu.jl
-	#
-	const mode = Base.Grisu.SHORTEST
-	#const typed = false
-	#const compact = false
+    #
+    # Based on Base.Grisu._show(io::IO, x::AbstractFloat, mode, n::Int, typed, compact)
+    # See julia/base/grisu/grisu.jl
+    #
+    mode = Base.Grisu.SHORTEST
+    #const typed = false
+    #const compact = false
 
     isnan(x) && return "NaN"
     if isinf(x)
-    	if signbit(x)
-    		return "-Inf"
-    	else
-    		return "Inf"
-    	end
+        if signbit(x)
+            return "-Inf"
+        else
+            return "Inf"
+        end
     end
 
     (len,pt,neg), buffer = Grisu.grisu(x,mode,n), Grisu.DIGITS
     pdigits = pointer(buffer)
-    
+
     #=
     if mode == PRECISION
         while len > 1 && buffer[len] == 0x30
@@ -32,7 +32,7 @@ function tostring(x::AbstractFloat, n::Int=15)
 
     io = IOBuffer()
     if neg
-    	write(io, "-")
+        write(io, "-")
     end
 
     #=
@@ -76,5 +76,5 @@ function tostring(x::AbstractFloat, n::Int=15)
     end
     #typed && !compact && isa(x,Float32) && write(io, "f0")
     #typed && isa(x,Float16) && write(io, ")")
-    return String(io)
+    return String(take!(io))
 end
