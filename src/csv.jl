@@ -96,9 +96,9 @@ function _readraw(input, format::CSVFormat, use_mmap::Bool, skipstart, comments:
 end
 
 """
-    readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
+    readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0, comments::Bool=false, comment_char::Char='#')
 
-header :: Bool Tells if the input file has a header in the first line. Default is `true`.
+`header` Tells if the input file has a header in the first line. Default is `true`.
 """
 function readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0, comments::Bool=false, comment_char::Char='#')
     raw = _readraw(input, format, use_mmap, skipstart, comments, comment_char)
@@ -107,7 +107,7 @@ function readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::B
 end
 
 """
-    readcsv(input, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
+    readcsv(input, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0, comments::Bool=false, comment_char::Char='#')
 
 Uses Schema inference.
 """
