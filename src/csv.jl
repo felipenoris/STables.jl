@@ -91,13 +91,17 @@ function _read_data!(table::Table, raw::Array{String,2}, format::CSVFormat; head
     return table
 end
 
+function _readraw(input, format::CSVFormat, use_mmap::Bool, skipstart, comments::Bool, comment_char::Char)
+    return DelimitedFiles.readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart, comments=comments, comment_char=comment_char)
+end
+
 """
     readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false)
 
 header :: Bool Tells if the input file has a header in the first line. Default is `true`.
 """
-function readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0)
-    raw = DelimitedFiles.readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
+function readcsv(input, schema::Schema, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0, comments::Bool=false, comment_char::Char='#')
+    raw = _readraw(input, format, use_mmap, skipstart, comments, comment_char)
     tb = Table(schema)
     return _read_data!(tb, raw, format; header=header)
 end
@@ -107,15 +111,15 @@ end
 
 Uses Schema inference.
 """
-function readcsv(input, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0)
-    raw = DelimitedFiles.readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
+function readcsv(input, format::CSVFormat=CSVFormat(); header::Bool=true, use_mmap::Bool=false, skipstart=0, comments::Bool=false, comment_char::Char='#')
+    raw = _readraw(input, format, use_mmap, skipstart, comments, comment_char)
     schema = infer_schema(raw, format, header)
     tb = Table(schema)
     return _read_data!(tb, raw, format; header=header)
 end
 
-function readcsv(input, types::Vector{T}, format::CSVFormat=CSVFormat(); use_mmap::Bool=false, skipstart=0) where {T<:Type}
-    raw = DelimitedFiles.readdlm(input, format.dlm, String; use_mmap=use_mmap, skipstart=skipstart)
+function readcsv(input, types::Vector{T}, format::CSVFormat=CSVFormat(); use_mmap::Bool=false, skipstart=0, comments::Bool=false, comment_char::Char='#') where {T<:Type}
+    raw = _readraw(input, format, use_mmap, skipstart, comments, comment_char)
 
     rows, cols = size(raw)
     @assert cols == length(types) "Number of cols in file is not $(length(types)): found $cols"
