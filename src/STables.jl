@@ -1,7 +1,5 @@
 
-module Tables
-
-@assert VERSION >= v"0.7-" "Tables.jl requires Julia v0.7.0 or newer."
+module STables
 
 using DataFrames
 using Dates
@@ -15,6 +13,4 @@ include("tablerow.jl")
 include("schema_inference.jl")
 include("csv.jl")
 
-export Table, Schema
-
-end # module Tables
+end # module STables

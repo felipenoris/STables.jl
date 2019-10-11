@@ -1,5 +1,5 @@
-name = "Tables"
-uuid = "c9169f50-4b45-11e9-02bd-63412111d31f"
+name = "STables"
+uuid = "39e8cadc-1d70-46a4-8b03-93b39db385b7"
 authors = ["Felipe Noronha <felipenoris@gmail.com>"]
 version = "0.1.0"
 

@@ -1,7 +1,7 @@
 
 # Basic Table tests
 
-using Tables
+import STables
 using Test
 using DataFrames
 using Dates
@@ -11,9 +11,9 @@ import DelimitedFiles
 function create_table_a()
     col_names = [:C_STRING, :C_INT, :C_FLOAT, :C_NSTRING, :C_NINT, :C_NFLOAT]
     col_types = [String, Int, Float64, Union{Missing, String}, Union{Missing, Int}, Union{Missing, Float64}]
-    ta_schema = Tables.Schema(col_names, col_types)
+    ta_schema = STables.Schema(col_names, col_types)
     rows = 2
-    ta = Tables.Table(ta_schema, rows)
+    ta = STables.Table(ta_schema, rows)
     ta[1,1] = "1,1"
     ta[1,2] = 5
     ta[1,3] = 2.2
@@ -32,47 +32,47 @@ function create_table_a()
 end
 
 @testset "Grisu" begin
-    @test Tables.tostring(0.58) == "0.58"
-    @test Tables.tostring(15.2) == "15.2"
-    @test Tables.tostring(.000222) == "0.000222"
-    @test Tables.tostring(-.2) == "-0.2"
-    @test Tables.tostring(NaN) == "NaN"
-    @test parse(Float64, Tables.tostring(15.2)) ≈ 15.2
+    @test STables.tostring(0.58) == "0.58"
+    @test STables.tostring(15.2) == "15.2"
+    @test STables.tostring(.000222) == "0.000222"
+    @test STables.tostring(-.2) == "-0.2"
+    @test STables.tostring(NaN) == "NaN"
+    @test parse(Float64, STables.tostring(15.2)) ≈ 15.2
 end
 
 @testset "Schema" begin
     let
-        s = Tables.Schema(a=String, b=Union{Missing, String})
+        s = STables.Schema(a=String, b=Union{Missing, String})
         @test s.names == [:a, :b]
         @test s.types == [String, Union{Missing, String}]
     end
 
     let
-        s = Tables.Schema(a=String, b=[1,2])
+        s = STables.Schema(a=String, b=[1,2])
         @test s.names == [:a, :b]
         @test s.types == [String, Int]
     end
 
     let
-        s = Tables.Schema(a=[1,2], b=["a", missing])
+        s = STables.Schema(a=[1,2], b=["a", missing])
         @test s.names == [:a, :b]
         @test s.types == [Int, Union{Missing, String}]
     end
 
     let
-        s = Tables.Schema(a=[1,2], b=["a", missing])
+        s = STables.Schema(a=[1,2], b=["a", missing])
         @test s.names == [:a, :b]
         @test s.types == [Int, Union{String, Missing}]
     end
 
     let
-        sa = Schema([:a => String, :b => Int, :c => String])
-        sb = Schema([:a => String, :b => Int, :c => String])
+        sa = STables.Schema([:a => String, :b => Int, :c => String])
+        sb = STables.Schema([:a => String, :b => Int, :c => String])
         @test sa == sb
     end
 
     @testset "Copying" begin
-        sch = Schema(a=Int, b=String)
+        sch = STables.Schema(a=Int, b=String)
         sch_copy = copy(sch)
         @test isequal(sch, sch_copy)
         push!(sch, :c => Float64)
@@ -81,7 +81,7 @@ end
 
     @testset "deepcopy has the same effects for schema" begin
         # deepcopy has the same effects for schema
-        sch = Schema(a=Int, b=String)
+        sch = STables.Schema(a=Int, b=String)
         sch_copy = deepcopy(sch)
         @test isequal(sch, sch_copy)
         push!(sch, :c => Float64)
@@ -90,28 +90,28 @@ end
 
     let
         p = [:a => String, :b => Int]
-        s = Tables.Schema(p)
-        @test p == Tables.pairs(s)
+        s = STables.Schema(p)
+        @test p == STables.pairs(s)
     end
 end
 
 @testset "Table" begin
     @testset "Constructor" begin
-        tb = Table(a=[1, 2], b=[3, missing])
+        tb = STables.Table(a=[1, 2], b=[3, missing])
         @test tb[:a] == [ 1 , 2 ]
         @test isequal(tb[:b], [3, missing])
     end
 
     @testset "Create Column" begin
         @testset "missing" begin
-            y = Tables._create_table_column(Union{Missing, Int}, 2)
+            y = STables._create_table_column(Union{Missing, Int}, 2)
             @test typeof(y) == Vector{Union{Missing, Int}}
             @test length(y) == 2
             @test ismissing(y[2])
         end
 
         @testset "string" begin
-            z = Tables._create_table_column(String, 2)
+            z = STables._create_table_column(String, 2)
             @test typeof(z) == Vector{String}
             @test length(z) == 2
             @test z[2] == ""
@@ -143,8 +143,8 @@ end
         @test ismissing(ta[2,5])
         @test ta[2,6] == 2.3
 
-        Tables.TableRow(ta, 1)[:] == [ "1,1", 5, 2.2, "1;4", 5, 2.3 ]
-        isequal(Tables.TableRow(ta, 2)[:], [ "1;1", 5, 2.2, missing, missing, 2.3 ])
+        STables.TableRow(ta, 1)[:] == [ "1,1", 5, 2.2, "1;4", 5, 2.3 ]
+        isequal(STables.TableRow(ta, 2)[:], [ "1;1", 5, 2.2, missing, missing, 2.3 ])
 
         # Scalar attribution to column
         @test ta[:C_STRING] == ["1,1", "1;1"]
@@ -187,12 +187,12 @@ end
 
     @testset "eachrow" begin
         # eachrow
-        sch = Schema([:a => String, :b => Int, :c => String])
-        tb = Tables.Table(sch, 5)
+        sch = STables.Schema([:a => String, :b => Int, :c => String])
+        tb = STables.Table(sch, 5)
         tb[:a] = "fixed-"
 
         i = 1
-        for r in Tables.eachrow(tb)
+        for r in STables.eachrow(tb)
             r[:c] = string(i)
             i += 1
         end
@@ -210,8 +210,8 @@ end
     @testset "Thousands Separator" begin
 
         # Table tests with thousands_separator
-        fm = Tables.CSVFormat(thousands_separator='.', date_format=Dates.DateFormat("dd/mm/Y"))
-        tb_example_csv = Tables.readcsv("example.csv", [String, Int, Float64, Date], fm)
+        fm = STables.CSVFormat(thousands_separator='.', date_format=Dates.DateFormat("dd/mm/Y"))
+        tb_example_csv = STables.readcsv("example.csv", [String, Int, Float64, Date], fm)
 
         #=
         str1;10;10.000,23
@@ -253,19 +253,19 @@ end
         @test tb_example_csv[6,4] == Date(2016,1,27)
 
         @testset "collect a TableRow" begin
-            @test collect(Tables.TableRow(tb_example_csv, 1)) == ["str1", 10, 1000, Date(2016,1,2)]
+            @test collect(STables.TableRow(tb_example_csv, 1)) == ["str1", 10, 1000, Date(2016,1,2)]
         end
     end
 
     @testset "append a row" begin
-        tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing] )
+        tb = STables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing] )
         row = [ 4, "four", missing]
         append!(tb, row)
         @test tb[:a] == [1, 2, 3, 4]
         @test tb[:b] == ["one", "two", "three", "four"]
         @test isequal(tb[:c], [ 10.0, 20.0, missing, missing])
 
-        tr = Tables.TableRow(tb, 2)
+        tr = STables.TableRow(tb, 2)
         @test tr[1] == 2
         @test tr[:a] == 2
         @test tr[2] == "two"
@@ -276,7 +276,7 @@ end
 
     @testset "append a matrix" begin
         # append a matrix
-        tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing] )
+        tb = STables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing] )
 
         mat = [ 4 "four" 40.0;
                 5 "five" missing
@@ -290,8 +290,8 @@ end
 
     @testset "append a table" begin
         # append a table
-        tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing] )
-        tb2 = Tables.Table(a=[4, 5], b=["four", "five"], c=[ 40.0, missing ])
+        tb = STables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing] )
+        tb2 = STables.Table(a=[4, 5], b=["four", "five"], c=[ 40.0, missing ])
         append!(tb, tb2)
         @test tb[:a] == [1, 2, 3, 4, 5]
         @test tb[:b] == ["one", "two", "three", "four", "five"]
@@ -299,7 +299,7 @@ end
     end
 
     @testset "Copying Tables" begin
-        tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing] )
+        tb = STables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing] )
         tb_copy = copy(tb)
         @test isequal(tb, tb_copy)
         append!(tb, [ 4, "four", 40.0 ])
@@ -309,7 +309,7 @@ end
     end
 
     @testset "Deepcopy for Tables" begin
-        tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing ] )
+        tb = STables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing ] )
         tb_copy = deepcopy(tb)
         @test isequal(tb, tb_copy)
         append!(tb, [ 4, "four", 40.0])
@@ -317,7 +317,7 @@ end
     end
 
     @testset "vcat row" begin
-        tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing ] )
+        tb = STables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing ] )
         row = [ 4, "four", 40.0 ]
         tb_new = [ tb ; row]
         @test tb_new[:a] == [1, 2, 3, 4]
@@ -326,7 +326,7 @@ end
     end
 
     @testset "vcat matrix" begin
-        tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing ] )
+        tb = STables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing ] )
 
         mat = [ 4 "four" 40.0;
                 5 "five" missing
@@ -339,8 +339,8 @@ end
     end
 
     @testset "vcat table" begin
-        tb = Tables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing ] )
-        tb2 = Tables.Table(a=[4, 5], b=["four", "five"], c=[ 40.0, missing ])
+        tb = STables.Table(a=[1,2,3], b=["one", "two", "three"], c=[ 10.0, 20.0, missing ] )
+        tb2 = STables.Table(a=[4, 5], b=["four", "five"], c=[ 40.0, missing ])
         tb_new = [tb; tb2]
         @test tb_new[:a] == [1, 2, 3, 4, 5]
         @test tb_new[:b] == ["one", "two", "three", "four", "five"]
@@ -354,7 +354,7 @@ end
     ta = create_table_a()
 
     try
-        Tables.writecsv(FP_TA_CSV, ta)
+        STables.writecsv(FP_TA_CSV, ta)
         lines = readlines(FP_TA_CSV)
         @test length(lines) == 3
         @test lines[1] == "C_STRING;C_INT;C_FLOAT;C_NSTRING;C_NINT;C_NFLOAT"
@@ -363,9 +363,9 @@ end
 
         col_names = [:C_STRING, :C_INT, :C_FLOAT, :C_NSTRING, :C_NINT, :C_NFLOAT]
         col_types = [String, Int, Float64, Union{Missing, String}, Union{Missing, Int}, Union{Missing, Float64}]
-        ta_schema = Tables.Schema(col_names, col_types)
+        ta_schema = STables.Schema(col_names, col_types)
 
-        tb = Tables.readcsv(FP_TA_CSV, col_types)
+        tb = STables.readcsv(FP_TA_CSV, col_types)
         @test names(tb) == col_names
         @test tb[1,1] == "1,1"
         @test tb[1,2] == 5
@@ -380,15 +380,15 @@ end
         @test ismissing(tb[2,5])
         @test tb[2,6] == 2.3
 
-        fm = Tables.CSVFormat(decimal_separator='.')
-        Tables.writecsv(FP_TA_CSV, ta, fm; header=false)
+        fm = STables.CSVFormat(decimal_separator='.')
+        STables.writecsv(FP_TA_CSV, ta, fm; header=false)
         lines = readlines(FP_TA_CSV)
         @test length(lines) == 2
         @test chomp(lines[1]) == "1,1;5;2.2;\"1;4\";5;2.3"
         @test chomp(lines[2]) == "\"1;1\";5;2.2;;;2.3"
 
-        fm = Tables.CSVFormat(decimal_separator='.')
-        tb = Tables.readcsv(FP_TA_CSV, ta_schema, fm; header=false)
+        fm = STables.CSVFormat(decimal_separator='.')
+        tb = STables.readcsv(FP_TA_CSV, ta_schema, fm; header=false)
         @test names(tb) == col_names
         @test tb[1,1] == "1,1"
         @test tb[1,2] == 5
@@ -410,8 +410,8 @@ end
 @testset "Schema Inference" begin
 
     @testset "valid integers without thousands separator" begin
-        fm = Tables.CSVFormat(decimal_separator='.')
-        ir = Tables.integer_regex(fm)
+        fm = STables.CSVFormat(decimal_separator='.')
+        ir = STables.integer_regex(fm)
         @test occursin(ir, "0")
         @test occursin(ir, "1203")
         @test occursin(ir, "-1")
@@ -426,8 +426,8 @@ end
 
     @testset "valid integers with thousands separator" begin
         let
-            fm = Tables.CSVFormat(decimal_separator=',', thousands_separator='.')
-            ir = Tables.integer_regex(fm)
+            fm = STables.CSVFormat(decimal_separator=',', thousands_separator='.')
+            ir = STables.integer_regex(fm)
             @test occursin(ir, "0")
             @test occursin(ir, "-1")
             @test !occursin(ir, "am")
@@ -452,8 +452,8 @@ end
         end
 
         let
-            fm = Tables.CSVFormat(decimal_separator='.', thousands_separator=',')
-            ir = Tables.integer_regex(fm)
+            fm = STables.CSVFormat(decimal_separator='.', thousands_separator=',')
+            ir = STables.integer_regex(fm)
             @test occursin(ir, "0")
             @test occursin(ir, "-1")
             @test !occursin(ir, "am")
@@ -480,8 +480,8 @@ end
     end
 
     @testset "valid floats without thousands separator" begin
-        fm = Tables.CSVFormat(decimal_separator='.')
-        ir = Tables.float_regex(fm)
+        fm = STables.CSVFormat(decimal_separator='.')
+        ir = STables.float_regex(fm)
         @test occursin(ir, "0")
         @test occursin(ir, "1203")
         @test occursin(ir, "-1")
@@ -502,8 +502,8 @@ end
     end
 
     @testset "valid floats with thousands separator" begin
-        fm = Tables.CSVFormat(thousands_separator='.')
-        ir = Tables.float_regex(fm)
+        fm = STables.CSVFormat(thousands_separator='.')
+        ir = STables.float_regex(fm)
         @test occursin(ir, "0")
         @test occursin(ir, "-1")
         @test !occursin(ir, "am")
@@ -539,8 +539,8 @@ end
     end
 
     @testset "valid floats with thousands separator" begin
-        fm = Tables.CSVFormat(decimal_separator='.', thousands_separator=',')
-        ir = Tables.float_regex(fm)
+        fm = STables.CSVFormat(decimal_separator='.', thousands_separator=',')
+        ir = STables.float_regex(fm)
         @test occursin(ir, "0")
         @test occursin(ir, "-1")
         @test !occursin(ir, "am")
@@ -576,29 +576,29 @@ end
     end
 
     @testset "read csv with type inference" begin
-        fm = Tables.CSVFormat(thousands_separator='.', date_format=Dates.DateFormat("dd/mm/Y"))
+        fm = STables.CSVFormat(thousands_separator='.', date_format=Dates.DateFormat("dd/mm/Y"))
         raw = DelimitedFiles.readdlm("example.csv", fm.dlm, String)
 
         let
-            s = Tables.infer_type(raw[2,3], fm)
-            @test s == Tables.InferenceState(Int, false)
-            Tables.infer_type(raw[3,3], fm, s)
-            @test s == Tables.InferenceState(Float64,false)
-            Tables.infer_type(raw[5,3], fm, s)
-            @test s == Tables.InferenceState(Float64,false) # should not go back to Int
+            s = STables.infer_type(raw[2,3], fm)
+            @test s == STables.InferenceState(Int, false)
+            STables.infer_type(raw[3,3], fm, s)
+            @test s == STables.InferenceState(Float64,false)
+            STables.infer_type(raw[5,3], fm, s)
+            @test s == STables.InferenceState(Float64,false) # should not go back to Int
         end
 
-        sch = Tables.infer_schema(raw, fm)
-        @test sch == Schema([:COL_A,:COL_B,:COL_C,:COL_D], [String,Int64,Float64,Date])
+        sch = STables.infer_schema(raw, fm)
+        @test sch == STables.Schema([:COL_A,:COL_B,:COL_C,:COL_D], [String,Int64,Float64,Date])
 
-        tb = Tables.readcsv("example.csv", sch, fm)
+        tb = STables.readcsv("example.csv", sch, fm)
 
-        fm2 = Tables.CSVFormat(decimal_separator='.', date_format=Dates.DateFormat("dd/mm/Y"))
-        tb_copy = Tables.readcsv("example_no_ts.csv", fm2)
+        fm2 = STables.CSVFormat(decimal_separator='.', date_format=Dates.DateFormat("dd/mm/Y"))
+        tb_copy = STables.readcsv("example_no_ts.csv", fm2)
         @test isequal(tb, tb_copy)
 
-        fm = Tables.CSVFormat(dlm=',', decimal_separator='.')
-        tb = Tables.readcsv("example_nullable.csv", fm; header=false)
+        fm = STables.CSVFormat(dlm=',', decimal_separator='.')
+        tb = STables.readcsv("example_nullable.csv", fm; header=false)
         @test tb[1,1] == 1
         @test ismissing(tb[2,1])
         @test tb[3,1] == 3
@@ -613,8 +613,8 @@ end
 
 @testset "DataFrames" begin
     @testset "name" begin
-        sch = Tables.Schema([:a, :b, :c, :d], [Int, String, Bool, Union{Missing, Int}])
-        tb = Tables.Table(sch, 3)
+        sch = STables.Schema([:a, :b, :c, :d], [Int, String, Bool, Union{Missing, Int}])
+        tb = STables.Table(sch, 3)
         tb[:a] = [1, 2, 3]
         tb[:b] = ["1", "2", "3"]
         tb[:c] = [false, true, false]
@@ -632,21 +632,21 @@ end
         # Table with DataFrame
         df = DataFrame(a = [1, missing], b = Union{Missing, Symbol}[:a, :b])
         df_types = [Union{Missing, Int}, Union{Missing, Symbol}]
-        df_schema = Tables.Schema([:col1, :col2], df_types)
-        df_table = Tables.Table(df_schema, df)
+        df_schema = STables.Schema([:col1, :col2], df_types)
+        df_table = STables.Table(df_schema, df)
 
         @test ismissing(df_table[2,1])
         @test df_table[1,1] == 1
         @test df_table[1,2] == :a
         @test df_table[2,2] == :b
 
-        df_table2 = Tables.Table([Union{Missing, Int}, Union{Missing, Symbol}], df)
+        df_table2 = STables.Table([Union{Missing, Int}, Union{Missing, Symbol}], df)
         @test ismissing(df_table2[2,1])
         @test df_table2[1,1] == 1
         @test df_table2[1,2] == :a
         @test df_table2[2,2] == :b
 
-        df_table3 = Tables.Table(df)
+        df_table3 = STables.Table(df)
         @test ismissing(df_table3[2,1])
         @test df_table3[1,1] == 1
         @test df_table3[1,2] == :a
