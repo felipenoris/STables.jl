@@ -82,7 +82,7 @@ function Table(schema::Schema, df::DataFrame)
     @assert cols == length(schema.names) "number of columns in DataFrame ($cols) does not match schema ($(length(schema.names)))."
     data = Vector{Any}(undef, cols)
 
-    @inbounds for (c, df_column) in enumerate(DataFrames.eachcol(df, false))
+    @inbounds for (c, df_column) in enumerate(DataFrames.eachcol(df))
         @assert eltype(df_column) == schema.types[c] "Type mismatch between schema ($(schema.types[c])) and DataFrame ($(eltype(df_column))) for column $c."
         data[c] = copy(df_column)
     end
@@ -103,7 +103,7 @@ function Table(df::DataFrame)
 
     data = Vector{Any}(undef, cols)
 
-    @inbounds for (c, df_column) in enumerate(DataFrames.eachcol(df, false))
+    @inbounds for (c, df_column) in enumerate(DataFrames.eachcol(df))
         col_types[c] = eltype(df_column)
         data[c] = copy(df_column)
     end
