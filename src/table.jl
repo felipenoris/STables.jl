@@ -98,7 +98,7 @@ end
 
 function Table(df::DataFrame)
     rows, cols = size(df)
-    col_names = copy(DataFrames.names(df))
+    col_names = copy(names(df))
     col_types = Vector{Type}(undef, cols)
 
     data = Vector{Any}(undef, cols)
@@ -113,9 +113,9 @@ end
 
 DataFrames.names(t::Table) = names(t.schema)
 
-function DataFrames.names!(tb::Table, new_header::Vector)
+function DataFrames.rename!(tb::Table, new_header::Vector)
     new_header_as_sym = new_header_as_sym = [ Symbol(x) for x in new_header]
-    names!(tb.schema, new_header_as_sym)
+    DataFrames.rename!(tb.schema, new_header_as_sym)
 end
 
 """

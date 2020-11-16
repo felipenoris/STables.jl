@@ -67,9 +67,9 @@ function Base.push!(s::Schema, column_description::Pair{Symbol, T}) where {T<:Ty
     push!(s.types, column_description[2])
 end
 
-DataFrames.names(s::Schema) = s.names
+Base.names(s::Schema) = copy(s.names)
 
-function DataFrames.names!(s::Schema, new_names::Vector{Symbol})
+function DataFrames.rename!(s::Schema, new_names::Vector{Symbol})
     s.names = new_names
 end
 

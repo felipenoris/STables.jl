@@ -620,12 +620,14 @@ end
         tb[:c] = [false, true, false]
         tb[:d] = [1, 2, missing]
 
-        names!(tb, [:a, :b, :c, :d])
+        rename!(tb, [:a, :b, :c, :d])
         @test tb[1, 1] == 1
         @test tb[1, 2] == "1"
         @test tb[1, 3] == false
         @test ismissing(tb[3, 4])
         @test tb[1, 4] == 1
+
+        @test names(tb) == [ :a, :b, :c, :d ]
     end
 
     @testset "Table with dataframe" begin
