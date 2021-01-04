@@ -82,8 +82,13 @@ function _read_data!(table::Table, raw::Array{String,2}, format::CSVFormat; head
 
     col_array = Vector{Any}(undef, cols)
     @inbounds for col in 1:cols
-        col_type = table.schema.types[col]
-        col_array[col] = _read_column(raw[:,col], col_type, ROW_OFFSET, FST_DATAROW_INDEX, rows, format)
+        try
+            col_type = table.schema.types[col]
+            col_array[col] = _read_column(raw[:,col], col_type, ROW_OFFSET, FST_DATAROW_INDEX, rows, format)
+        catch err
+            @error("Error parsing column $col - $(table.schema.names[col]) <: $(table.schema.types[col])")
+            rethrow()
+        end
     end
 
     # Set table data without checks
