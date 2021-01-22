@@ -1,12 +1,16 @@
 
-using Base.Grisu
+if isdefined(Base, :Grisu)
+    import Base.Grisu
+else
+    import Grisu
+end
 
 function tostring(x::AbstractFloat, n::Int=15)
     #
     # Based on Base.Grisu._show(io::IO, x::AbstractFloat, mode, n::Int, typed, compact)
     # See julia/base/grisu/grisu.jl
     #
-    mode = Base.Grisu.SHORTEST
+    mode = Grisu.SHORTEST
     #const typed = false
     #const compact = false
 
