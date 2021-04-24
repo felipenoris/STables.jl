@@ -10,7 +10,7 @@ DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Grisu = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 
 [compat]
-DataFrames = "0.22"
+DataFrames = "0.22, 1"
 julia = "1"
 
 [extras]
